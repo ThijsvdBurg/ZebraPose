@@ -44,7 +44,7 @@ def main(configs):
     val_folder=configs['val_folder']                                  # usually is 'test'
     second_dataset_ratio = configs['second_dataset_ratio']              # the percentage of second dataset in the batch
     num_workers = configs['num_workers']                                # for data loader
-    train_obj_visible_theshold = configs['train_obj_visible_theshold']  # for test is always 0.1, for training we can set different values
+    train_obj_visible_threshold = configs['train_obj_visible_threshold']  # for test is always 0.1, for training we can set different values
     #### network settings
     BoundingBox_CropSize_image = configs['BoundingBox_CropSize_image']  # input image size
     BoundingBox_CropSize_GT = configs['BoundingBox_CropSize_GT']        # network output size
@@ -71,19 +71,19 @@ def main(configs):
     binary_loss_weight = configs['binary_loss_weight']                     # 3 is the best so far
     
     #### augmentations
-    Detection_reaults=configs['Detection_reaults']                       # for the test, the detected bounding box provided by GDR Net
+    Detection_results=configs['Detection_results']                       # for the test, the detected bounding box provided by GDR Net
     padding_ratio=configs['padding_ratio']                               # pad the bounding box for training and test
     resize_method = configs['resize_method']                             # how to resize the roi images to 256*256
     use_peper_salt= configs['use_peper_salt']                            # if add additional peper_salt in the augmentation
     use_motion_blur= configs['use_motion_blur']                          # if add additional motion_blur in the augmentation
     # vertex code settings
-    divide_number_each_itration = configs['divide_number_each_itration']
-    number_of_itration = configs['number_of_itration']
+    divide_number_each_iteration = configs['divide_number_each_iteration']
+    number_of_iterations = configs['number_of_iterations']
 
     sym_aware_training=configs['sym_aware_training']
 
     # get dataset informations
-    dataset_dir,source_dir,model_plys,model_info,model_ids,rgb_files,depth_files,mask_files,mask_visib_files,gts,gt_infos,cam_param_global, cam_params = bop_io.get_dataset(bop_path,dataset_name, train=True, data_folder=training_data_folder, data_per_obj=True, incl_param=True, train_obj_visible_theshold=train_obj_visible_theshold)
+    dataset_dir,source_dir,model_plys,model_info,model_ids,rgb_files,depth_files,mask_files,mask_visib_files,gts,gt_infos,cam_param_global, cam_params = bop_io.get_dataset(bop_path,dataset_name, train=True, data_folder=training_data_folder, data_per_obj=True, incl_param=True, train_obj_visible_threshold=train_obj_visible_threshold)
     obj_name_obj_id, symmetry_obj = get_obj_info(dataset_name)
     obj_id = int(obj_name_obj_id[obj_name] - 1)    # now the obj_id started from 0
     if obj_name in symmetry_obj:
@@ -96,18 +96,18 @@ def main(configs):
     print("obj_diameter", obj_diameter, flush=True)
     path_dict = os.path.join(dataset_dir, "models_GT_color", "Class_CorresPoint{:06d}.txt".format(obj_id+1))
     total_numer_class, _, _, dict_class_id_3D_points = load_dict_class_id_3D_points(path_dict)
-    divide_number_each_itration = int(divide_number_each_itration)
+    divide_number_each_iteration = int(divide_number_each_iteration)
     total_numer_class = int(total_numer_class)
-    number_of_itration = int(number_of_itration)
-    if divide_number_each_itration ** number_of_itration != total_numer_class:
+    number_of_iterations = int(number_of_iterations)
+    if divide_number_each_iteration ** number_of_iterations != total_numer_class:
         raise AssertionError("the combination is not valid")
     if BoundingBox_CropSize_image / BoundingBox_CropSize_GT != 2:
         raise AssertionError("currnet endoder-decoder only support input_size/output_size = 2")
-    GT_code_infos = [divide_number_each_itration, number_of_itration, total_numer_class]
+    GT_code_infos = [divide_number_each_iteration, number_of_iterations, total_numer_class]
 
-    if divide_number_each_itration != 2 and (BinaryCode_Loss_Type=='BCE' or BinaryCode_Loss_Type=='L1'):
+    if divide_number_each_iteration != 2 and (BinaryCode_Loss_Type=='BCE' or BinaryCode_Loss_Type=='L1'):
         raise AssertionError("for non-binary case, use CE as loss function")
-    if divide_number_each_itration == 2 and BinaryCode_Loss_Type=='CE':
+    if divide_number_each_iteration == 2 and BinaryCode_Loss_Type=='CE':
         raise AssertionError("not support for now")
 
     vertices = inout.load_ply(mesh_path)["pts"]
@@ -124,7 +124,7 @@ def main(configs):
     print("training_data_folder image example:", rgb_files[obj_id][0], flush=True)
 
     if training_data_folder_2 != 'none':
-        dataset_dir_pbr,_,_,_,_,rgb_files_pbr,_,mask_files_pbr,mask_visib_files_pbr,gts_pbr,gt_infos_pbr,_, camera_params_pbr = bop_io.get_dataset(bop_path, dataset_name, train=True, data_folder=training_data_folder_2, data_per_obj=True, incl_param=True, train_obj_visible_theshold=train_obj_visible_theshold)
+        dataset_dir_pbr,_,_,_,_,rgb_files_pbr,_,mask_files_pbr,mask_visib_files_pbr,gts_pbr,gt_infos_pbr,_, camera_params_pbr = bop_io.get_dataset(bop_path, dataset_name, train=True, data_folder=training_data_folder_2, data_per_obj=True, incl_param=True, train_obj_visible_threshold=train_obj_visible_threshold)
         train_dataset_2 = bop_dataset_single_obj_pytorch(
                                                         dataset_dir_pbr, training_data_folder_2, rgb_files_pbr[obj_id], mask_files_pbr[obj_id], mask_visib_files_pbr[obj_id], 
                                                         gts_pbr[obj_id], gt_infos_pbr[obj_id], camera_params_pbr[obj_id], True, 
@@ -141,10 +141,10 @@ def main(configs):
 
     # define test data loader
     if not bop_challange:
-        dataset_dir_test,_,_,_,_,test_rgb_files,_,test_mask_files,test_mask_visib_files,test_gts,test_gt_infos,_, camera_params_test = bop_io.get_dataset(bop_path, dataset_name,train=False, data_folder=val_folder, data_per_obj=True, incl_param=True, train_obj_visible_theshold=train_obj_visible_theshold)
+        dataset_dir_test,_,_,_,_,test_rgb_files,_,test_mask_files,test_mask_visib_files,test_gts,test_gt_infos,_, camera_params_test = bop_io.get_dataset(bop_path, dataset_name,train=False, data_folder=val_folder, data_per_obj=True, incl_param=True, train_obj_visible_threshold=train_obj_visible_threshold)
         if dataset_name == 'ycbv':
             print("select key frames from ycbv test images")
-            key_frame_index = ycbv_select_keyframe(Detection_reaults, test_rgb_files[obj_id])
+            key_frame_index = ycbv_select_keyframe(Detection_results, test_rgb_files[obj_id])
             test_rgb_files_keyframe = [test_rgb_files[obj_id][i] for i in key_frame_index]
             test_mask_files_keyframe = [test_mask_files[obj_id][i] for i in key_frame_index]
             test_mask_visib_files_keyframe = [test_mask_visib_files[obj_id][i] for i in key_frame_index]
@@ -161,8 +161,8 @@ def main(configs):
         dataset_dir_test,_,_,_,_,test_rgb_files,_,test_mask_files,test_mask_visib_files,test_gts,test_gt_infos,_, camera_params_test = bop_io.get_bop_challange_test_data(bop_path, dataset_name, target_obj_id=obj_id+1, data_folder=val_folder)
     print('test_rgb_file exsample', test_rgb_files[obj_id][0])
 
-    if Detection_reaults != 'none':
-        Det_Bbox = get_detection_results(Detection_reaults, test_rgb_files[obj_id], obj_id+1, 0)
+    if Detection_results != 'none':
+        Det_Bbox = get_detection_results(Detection_results, test_rgb_files[obj_id], obj_id+1, 0)
     else:
         Det_Bbox = None
 
@@ -178,7 +178,7 @@ def main(configs):
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=num_workers)
 
     #############build the network 
-    binary_code_length = number_of_itration
+    binary_code_length = number_of_iterations
     print("binary_code_length: ", binary_code_length)
     configs['binary_code_length'] = binary_code_length
     
@@ -186,12 +186,12 @@ def main(configs):
                 num_resnet_layers=resnet_layer, 
                 concat=concat, 
                 binary_code_length=binary_code_length, 
-                divided_number_each_iteration = divide_number_each_itration, 
+                divided_number_each_iteration = divide_number_each_iteration, 
                 output_kernel_size = output_kernel_size,
                 efficientnet_key = efficientnet_key
             )
     maskLoss = MaskLoss()
-    binarycode_loss = BinaryCodeLoss(BinaryCode_Loss_Type, mask_binary_code_loss, divide_number_each_itration, use_histgramm_weighted_binary_loss=use_histgramm_weighted_binary_loss)
+    binarycode_loss = BinaryCodeLoss(BinaryCode_Loss_Type, mask_binary_code_loss, divide_number_each_iteration, use_histgramm_weighted_binary_loss=use_histgramm_weighted_binary_loss)
     
     #visulize input image, ground truth code, ground truth mask
     writer = SummaryWriter(tensorboard_path)
@@ -288,7 +288,7 @@ def main(configs):
                     print('Train err:{}'.format(binarycode_loss.histogram.detach().cpu().numpy()))
                
                 pred_masks = from_output_to_class_mask(pred_mask_prob) 
-                pred_codes = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_itration, binary_code_length=binary_code_length)
+                pred_codes = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_iteration, binary_code_length=binary_code_length)
                     
                 save_checkpoint(check_point_path, net, iteration_step, best_score, optimizer, 3)
 
@@ -311,7 +311,7 @@ def main(configs):
                                                                                 Bbox, 
                                                                                 BoundingBox_CropSize_GT, 
                                                                                 ProgX,
-                                                                                divide_number_each_itration, 
+                                                                                divide_number_each_iteration, 
                                                                                 dict_class_id_3D_points, 
                                                                                 intrinsic_matrix=cam_K)    
 
@@ -371,11 +371,11 @@ if __name__ == "__main__":
 
     configs['config_file_name'] = config_file_name
 
-    if configs['Detection_reaults'] != 'none':
-        Detection_reaults = configs['Detection_reaults']
+    if configs['Detection_results'] != 'none':
+        Detection_results = configs['Detection_results']
         dirname = os.path.dirname(__file__)
-        Detection_reaults = os.path.join(dirname, Detection_reaults)
-        configs['Detection_reaults'] = Detection_reaults
+        Detection_results = os.path.join(dirname, Detection_results)
+        configs['Detection_results'] = Detection_results
 
     #print the configurations
     for key in configs:

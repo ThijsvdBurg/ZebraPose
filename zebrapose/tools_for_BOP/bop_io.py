@@ -103,7 +103,7 @@ def get_bop_challange_test_data(bop_dir, dataset, target_obj_id, data_folder='te
     return bop_dataset_dir,target_dir,[],[],[],rgb_files_per_obj,depth_files_per_obj,mask_files_per_obj,mask_visib_files_per_obj,gts_per_obj,gt_infos_per_obj,[],params_per_obj
 
 
-def get_dataset(bop_dir,dataset,train=True,incl_param=False ,eval_model=False, data_folder='None', data_per_obj=False, train_obj_visible_theshold=0.1):
+def get_dataset(bop_dir,dataset,train=True,incl_param=False ,eval_model=False, data_folder='None', data_per_obj=False, train_obj_visible_threshold=0.1):
     """
     bop_dir:            dir to bop folder
     dataset:            dataset name in bop_dir, like lm, lmo, tudl
@@ -199,7 +199,7 @@ def get_dataset(bop_dir,dataset,train=True,incl_param=False ,eval_model=False, d
                     if data_per_obj:
                         visib_thershold = 0.1
                         if train:
-                            visib_thershold = train_obj_visible_theshold
+                            visib_thershold = train_obj_visible_threshold
                         gts = scene_gts[im_id]
                         for counter, gt in enumerate(gts):
                             visib_fract = scene_gt_infos[im_id][counter]['visib_fract']

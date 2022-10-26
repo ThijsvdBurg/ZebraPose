@@ -8,7 +8,7 @@ val_folder = test_primesense_bop
 test_folder = test_primesense_bop
 second_dataset_ratio = 0.75
 num_workers = 8
-train_obj_visible_theshold = 0.2
+train_obj_visible_threshold = 0.2
 ####
 
 
@@ -49,7 +49,7 @@ binary_loss_weight = 3
 
 
 #### augmentations
-Detection_reaults = detection_results/cosypose_maskrcnn_pbr/challenge2022-524061_tless-test.json
+Detection_results = detection_results/cosypose_maskrcnn_pbr/challenge2022-524061_tless-test.json
 
 padding_ratio = 1.5
 resize_method = crop_square_resize  
@@ -58,8 +58,8 @@ use_peper_salt= True
 use_motion_blur= True
 
 #binary coding settings
-divide_number_each_itration = 2
-number_of_itration = 16
+divide_number_each_iteration = 2
+number_of_iterations = 16
 
 
 detector = MASKRCNN

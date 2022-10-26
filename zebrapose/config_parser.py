@@ -18,7 +18,7 @@ def parse_cfg(cfgfile):
             if value.isnumeric():
                 value = int(value)
 
-            if key == 'learning_rate' or key == 'padding_ratio' or key =='train_obj_visible_theshold' or key =='second_dataset_ratio':
+            if key == 'learning_rate' or key == 'padding_ratio' or key =='train_obj_visible_threshold' or key =='second_dataset_ratio':
                 value = float(value)
 
             if value == 'False':

@@ -15,7 +15,7 @@ def test_network_with_single_obj(
     
     BinaryCode_Loss_Type = configs['BinaryCode_Loss_Type']
     binary_code_length = configs['binary_code_length']
-    divide_number_each_itration = int(configs['divide_number_each_itration'])
+    divide_number_each_iteration = int(configs['divide_number_each_iteration'])
     BoundingBox_CropSize_GT = configs['BoundingBox_CropSize_GT']
     obj_name = configs['obj_name']
     dataset_name=configs['dataset_name']
@@ -55,7 +55,7 @@ def test_network_with_single_obj(
 
         pred_masks_prob, pred_code_prob = net(data)
 
-        pred_codes = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_itration, binary_code_length=binary_code_length)
+        pred_codes = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_iteration, binary_code_length=binary_code_length)
         pred_masks = from_output_to_class_mask(pred_masks_prob)
 
         # from binary code to pose
@@ -72,11 +72,11 @@ def test_network_with_single_obj(
         for counter, (r_GT, t_GT, Bbox, cam_K) in enumerate(zip(Rs, ts, Bboxes, cam_Ks)):
             if ignore_n_bit!=0 and configs['eval_with_ignore_bits']:
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_codes[counter][:,:,:-ignore_n_bit],
-                                                                            Bbox, BoundingBox_CropSize_GT, divide_number_each_itration, dict_class_id_3D_points, 
+                                                                            Bbox, BoundingBox_CropSize_GT, divide_number_each_iteration, dict_class_id_3D_points, 
                                                                             intrinsic_matrix=cam_K)
             else:
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_codes[counter], 
-                                                                            Bbox, BoundingBox_CropSize_GT, divide_number_each_itration, dict_class_id_3D_points, 
+                                                                            Bbox, BoundingBox_CropSize_GT, divide_number_each_iteration, dict_class_id_3D_points, 
                                                                             intrinsic_matrix=cam_K)
 
 
