@@ -279,16 +279,17 @@ def main(configs):
                                                                             Bbox, BoundingBox_CropSize_GT, ProgX, divide_number_each_iteration, dict_class_id_3D_points, 
                                                                             intrinsic_matrix=cam_K)
         
-            if success:     
-                # add icp refinement and replace R_predict, t_predict
-                depth_image = read_depth(test_depth_files[obj_id][batch_idx])
-                if dataset_name == 'ycbv' or dataset_name == 'tless':
-                    depth_image = depth_image * 0.1
-                full_mask = compute_original_mask(Bbox, test_img.shape[0], test_img.shape[1], pred_masks[counter])
-                R_refined, t_refined = icp_refiner.refine_poses(t_predict*0.1, R_predict, full_mask, depth_image, cam_K.cpu().detach().numpy())
-                R_predict = R_refined
-                t_predict = t_refined*10.
-                t_predict = t_predict.reshape((3,1))
+            if success:
+                if configs['use_icp']:
+                    # add icp refinement and replace R_predict, t_predict
+                    depth_image = read_depth(test_depth_files[obj_id][batch_idx])
+                    if dataset_name == 'ycbv' or dataset_name == 'tless':
+                        depth_image = depth_image * 0.1
+                    full_mask = compute_original_mask(Bbox, test_img.shape[0], test_img.shape[1], pred_masks[counter])
+                    R_refined, t_refined = icp_refiner.refine_poses(t_predict*0.1, R_predict, full_mask, depth_image, cam_K.cpu().detach().numpy())
+                    R_predict = R_refined
+                    t_predict = t_refined*10.
+                    t_predict = t_predict.reshape((3,1))
 
                 estimated_Rs.append(R_predict)
                 estimated_Ts.append(t_predict)
