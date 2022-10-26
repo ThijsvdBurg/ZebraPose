@@ -57,6 +57,8 @@ def main(configs):
     predict_entire_mask=configs['predict_entire_mask']                  # if predict the entire object part rather than the visible one
     if 'efficientnet_key' in configs.keys():
         efficientnet_key = configs['efficientnet_key']
+    ProgX = configs['use_progressive_x']
+    
     #### check points
     load_checkpoint = configs['load_checkpoint']
     tensorboard_path = configs['tensorboard_path']
@@ -67,6 +69,7 @@ def main(configs):
     batch_size=configs['batch_size']                                     # 32 is the best so far, set to 16 for debug in local machine
     learning_rate = configs['learning_rate']                             # 0.002 or 0.003 is the best so far
     binary_loss_weight = configs['binary_loss_weight']                     # 3 is the best so far
+    
     #### augmentations
     Detection_reaults=configs['Detection_reaults']                       # for the test, the detected bounding box provided by GDR Net
     padding_ratio=configs['padding_ratio']                               # pad the bounding box for training and test
@@ -307,6 +310,7 @@ def main(configs):
                                                                                 pred_codes[counter], 
                                                                                 Bbox, 
                                                                                 BoundingBox_CropSize_GT, 
+                                                                                ProgX,
                                                                                 divide_number_each_itration, 
                                                                                 dict_class_id_3D_points, 
                                                                                 intrinsic_matrix=cam_K)    

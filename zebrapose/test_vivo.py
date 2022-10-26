@@ -61,7 +61,7 @@ def main(configs):
 
     divide_number_each_itration = configs['divide_number_each_itration']
     number_of_itration = configs['number_of_itration']
-
+    ProgX = configs['use_progressive_x']
     torch.manual_seed(0)     
     np.random.seed(0)      
 
@@ -179,8 +179,13 @@ def main(configs):
             pred_masks = pred_masks.transpose(0, 2, 3, 1)
             pred_masks = pred_masks.squeeze(axis=-1).astype('uint8')
 
-            R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[0], pred_codes[0],
-                                                                        Bbox, BoundingBox_CropSize_GT, divide_number_each_itration, dict_class_id_3D_points, 
+            R_predict, t_predict, success = CNN_outputs_to_object_pose( pred_masks[0],
+                                                                        pred_codes[0],
+                                                                        Bbox,
+                                                                        BoundingBox_CropSize_GT,
+                                                                        ProgX,
+                                                                        divide_number_each_itration,
+                                                                        dict_class_id_3D_points, 
                                                                         intrinsic_matrix=Cam_K)
 
             if success:     

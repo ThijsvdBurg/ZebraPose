@@ -93,7 +93,7 @@ def get_class_id_image_validmask(class_id_image):
     return mask_image
 
 
-def CNN_outputs_to_object_pose(mask_image, class_code_image, Bbox, Bbox_Size, class_base=2, dict_class_id_3D_points=None, intrinsic_matrix=None):
+def CNN_outputs_to_object_pose(mask_image, class_code_image, Bbox, Bbox_Size, ProgX, class_base=2, dict_class_id_3D_points=None, intrinsic_matrix=None):
     if intrinsic_matrix is None:
         intrinsic_matrix = np.zeros((3,3))
 
@@ -125,7 +125,7 @@ def CNN_outputs_to_object_pose(mask_image, class_code_image, Bbox, Bbox_Size, cl
             coord_3d = np.ascontiguousarray(Points_3D.astype(np.float32))
             intrinsic_matrix = np.ascontiguousarray(intrinsic_matrix)
 
-            if True:
+            if ProgX:
                 pose_ests, label = pyprogressivex.find6DPoses(
                                                             x1y1 = coord_2d.astype(np.float64),
                                                             x2y2z2 = coord_3d.astype(np.float64),

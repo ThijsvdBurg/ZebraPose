@@ -92,7 +92,7 @@ def main(configs):
     concat=configs['concat_encoder_decoder']   
     if 'efficientnet_key' in configs.keys():
         efficientnet_key = configs['efficientnet_key']                
-
+    ProgX = configs['use_progressive_x']
     #### augmentations
     Detection_reaults=configs['Detection_reaults']                       # for the test, the detected bounding box provided by GDR Net
     padding_ratio=configs['padding_ratio']                               # pad the bounding box for training and test
@@ -272,11 +272,11 @@ def main(configs):
         for counter, (r_GT, t_GT, Bbox, cam_K) in enumerate(zip(Rs, ts, Bboxes, cam_Ks)):
             if ignore_bit!=0:
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_code_images[counter][:,:,:-ignore_bit],
-                                                                            Bbox, BoundingBox_CropSize_GT, divide_number_each_itration, new_dict_class_id_3D_points, 
+                                                                            Bbox, BoundingBox_CropSize_GT, ProgX, divide_number_each_itration, new_dict_class_id_3D_points, 
                                                                             intrinsic_matrix=cam_K)
             else:
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_code_images[counter], 
-                                                                            Bbox, BoundingBox_CropSize_GT, divide_number_each_itration, dict_class_id_3D_points, 
+                                                                            Bbox, BoundingBox_CropSize_GT, ProgX, divide_number_each_itration, dict_class_id_3D_points, 
                                                                             intrinsic_matrix=cam_K)
         
             if success:     
