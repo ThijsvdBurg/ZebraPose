@@ -95,15 +95,15 @@ def main(configs):
     obj_diameter = model_info[str(obj_id+1)]['diameter']
     print("obj_diameter", obj_diameter, flush=True)
     path_dict = os.path.join(dataset_dir, "models_GT_color", "Class_CorresPoint{:06d}.txt".format(obj_id+1))
-    total_numer_class, _, _, dict_class_id_3D_points = load_dict_class_id_3D_points(path_dict)
+    total_number_class, _, _, dict_class_id_3D_points = load_dict_class_id_3D_points(path_dict)
     divide_number_each_iteration = int(divide_number_each_iteration)
-    total_numer_class = int(total_numer_class)
+    total_number_class = int(total_number_class)
     number_of_iterations = int(number_of_iterations)
-    if divide_number_each_iteration ** number_of_iterations != total_numer_class:
+    if divide_number_each_iteration ** number_of_iterations != total_number_class:
         raise AssertionError("the combination is not valid")
     if BoundingBox_CropSize_image / BoundingBox_CropSize_GT != 2:
         raise AssertionError("currnet endoder-decoder only support input_size/output_size = 2")
-    GT_code_infos = [divide_number_each_iteration, number_of_iterations, total_numer_class]
+    GT_code_infos = [divide_number_each_iteration, number_of_iterations, total_number_class]
 
     if divide_number_each_iteration != 2 and (BinaryCode_Loss_Type=='BCE' or BinaryCode_Loss_Type=='L1'):
         raise AssertionError("for non-binary case, use CE as loss function")

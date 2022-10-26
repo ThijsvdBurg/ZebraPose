@@ -4,15 +4,15 @@ import cv2
 import pyprogressivex
 
 def load_dict_class_id_3D_points(path):
-    total_numer_class = 0
+    total_number_class = 0
     number_of_iterations = 0
 
     dict_class_id_3D_points = {}
     with open(path, "r") as f:
         first_line = f.readline()
-        total_numer_class_, divide_number_each_iteration, number_of_iterations_ = first_line.split(" ") 
+        total_number_class_, divide_number_each_iteration, number_of_iterations_ = first_line.split(" ") 
         divide_number_each_iteration = float(divide_number_each_iteration)
-        total_numer_class = float(total_numer_class_)
+        total_number_class = float(total_number_class_)
         number_of_iterations = float(number_of_iterations_)
 
         for line in f:
@@ -25,7 +25,7 @@ def load_dict_class_id_3D_points(path):
 
             dict_class_id_3D_points[code] = np.array([x,y,z])
 
-    return total_numer_class, divide_number_each_iteration, number_of_iterations, dict_class_id_3D_points
+    return total_number_class, divide_number_each_iteration, number_of_iterations, dict_class_id_3D_points
 
 def mapping_pixel_position_to_original_position(pixels, Bbox, Bbox_Size):
     """
