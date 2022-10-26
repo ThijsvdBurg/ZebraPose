@@ -159,7 +159,7 @@ def main(configs):
             camera_params_test[obj_id] = camera_params_test_keyframe
     else:
         dataset_dir_test,_,_,_,_,test_rgb_files,_,test_mask_files,test_mask_visib_files,test_gts,test_gt_infos,_, camera_params_test = bop_io.get_bop_challange_test_data(bop_path, dataset_name, target_obj_id=obj_id+1, data_folder=val_folder)
-    print('test_rgb_file exsample', test_rgb_files[obj_id][0])
+    print('test_rgb_file example', test_rgb_files[obj_id][0])
 
     if Detection_results != 'none':
         Det_Bbox = get_detection_results(Detection_results, test_rgb_files[obj_id], obj_id+1, 0)
