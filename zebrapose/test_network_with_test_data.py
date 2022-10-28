@@ -19,7 +19,8 @@ def test_network_with_single_obj(
     BoundingBox_CropSize_GT = configs['BoundingBox_CropSize_GT']
     obj_name = configs['obj_name']
     dataset_name=configs['dataset_name']
-    
+    progX=configs['use_progressive_x']
+
     _, symmetry_obj = get_obj_info(dataset_name)
     
     if obj_name in symmetry_obj:
@@ -72,11 +73,11 @@ def test_network_with_single_obj(
         for counter, (r_GT, t_GT, Bbox, cam_K) in enumerate(zip(Rs, ts, Bboxes, cam_Ks)):
             if ignore_n_bit!=0 and configs['eval_with_ignore_bits']:
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_codes[counter][:,:,:-ignore_n_bit],
-                                                                            Bbox, BoundingBox_CropSize_GT, divide_number_each_iteration, dict_class_id_3D_points, 
+                                                                            Bbox, BoundingBox_CropSize_GT, progX, divide_number_each_iteration, dict_class_id_3D_points, 
                                                                             intrinsic_matrix=cam_K)
             else:
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_codes[counter], 
-                                                                            Bbox, BoundingBox_CropSize_GT, divide_number_each_iteration, dict_class_id_3D_points, 
+                                                                            Bbox, BoundingBox_CropSize_GT, progX, divide_number_each_iteration, dict_class_id_3D_points, 
                                                                             intrinsic_matrix=cam_K)
 
 
