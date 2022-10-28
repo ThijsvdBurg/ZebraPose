@@ -3,7 +3,12 @@ import sys
 
 sys.path.insert(0, os.getcwd())
 
-from config_parser import parse_cfg
+#from config_parser import parse_cfg
+
+#from config.config_BOP.lmo import exp_lmo_BOP as cfg_file
+#from config.config_BOP.lmo import exp_lmo_BOP as cfg_file
+from config.config_BOP.tudl import exp_tudl_BOP as cfg_file
+
 import argparse
 
 from tools_for_BOP import bop_io
@@ -58,7 +63,7 @@ def main(configs):
     if 'efficientnet_key' in configs.keys():
         efficientnet_key = configs['efficientnet_key']
     ProgX = configs['use_progressive_x']
-    
+
     #### check points
     load_checkpoint = configs['load_checkpoint']
     tensorboard_path = configs['tensorboard_path']
@@ -69,7 +74,7 @@ def main(configs):
     batch_size=configs['batch_size']                                     # 32 is the best so far, set to 16 for debug in local machine
     learning_rate = configs['learning_rate']                             # 0.002 or 0.003 is the best so far
     binary_loss_weight = configs['binary_loss_weight']                     # 3 is the best so far
-    
+
     #### augmentations
     Detection_results=configs['Detection_results']                       # for the test, the detected bounding box provided by GDR Net
     padding_ratio=configs['padding_ratio']                               # pad the bounding box for training and test
@@ -188,7 +193,7 @@ def main(configs):
                 binary_code_length=binary_code_length, 
                 divided_number_each_iteration = divide_number_each_iteration, 
                 output_kernel_size = output_kernel_size,
-                efficientnet_key = efficientnet_key
+                efficientnet_key = None #efficientnet_key
             )
     maskLoss = MaskLoss()
     binarycode_loss = BinaryCodeLoss(BinaryCode_Loss_Type, mask_binary_code_loss, divide_number_each_iteration, use_histgramm_weighted_binary_loss=use_histgramm_weighted_binary_loss)
@@ -246,7 +251,7 @@ def main(configs):
                 entire_masks=entire_masks.cuda()
                 masks = masks.cuda()
                 class_code_images = class_code_images.cuda()
-         
+
             optimizer.zero_grad()
             if data.shape[0]!= batch_size:
                 raise ValueError(f"batch size wrong")
@@ -264,13 +269,13 @@ def main(configs):
                 loss_m = maskLoss(pred_mask_prob, masks)
 
             loss = binary_loss_weight*loss_b + loss_m 
-       
+
             loss.backward()
             optimizer.step()
-        
+
             print(config_file_name, " iteration_step:", iteration_step, 
-                "loss_b:", loss_b.item(),  
-                "loss_m:", loss_m.item() ,  
+                "loss_b:", loss_b.item(),
+                "loss_m:", loss_m.item() ,
                 "loss:", loss.item(),
                 flush=True
             )
@@ -280,16 +285,16 @@ def main(configs):
             writer.add_scalar('Loss/training loss binary code', loss_b, iteration_step)
 
             # test the trained CNN
-            log_freq = 1000
+            log_freq = 100
 
             if (iteration_step)%log_freq == 0:
                 if binarycode_loss.histogram is not None:
                     np.set_printoptions(formatter={'float': lambda x: "{0:.2f}".format(x)})
                     print('Train err:{}'.format(binarycode_loss.histogram.detach().cpu().numpy()))
-               
+
                 pred_masks = from_output_to_class_mask(pred_mask_prob) 
                 pred_codes = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_iteration, binary_code_length=binary_code_length)
-                    
+
                 save_checkpoint(check_point_path, net, iteration_step, best_score, optimizer, 3)
 
                 pred_codes = pred_codes.transpose(0, 2, 3, 1)
@@ -303,17 +308,17 @@ def main(configs):
                 cam_Ks = cam_Ks.detach().cpu().numpy()
 
                 ADD_passed=np.zeros(batch_size)
-                ADD_error=np.zeros(batch_size) 
+                ADD_error=np.zeros(batch_size)
 
                 for counter, (r_GT, t_GT, Bbox, cam_K) in enumerate(zip(Rs, ts, Bboxes, cam_Ks)):
-                    R_predict, t_predict, success = CNN_outputs_to_object_pose( pred_masks[counter], 
-                                                                                pred_codes[counter], 
-                                                                                Bbox, 
-                                                                                BoundingBox_CropSize_GT, 
+                    R_predict, t_predict, success = CNN_outputs_to_object_pose( pred_masks[counter],
+                                                                                pred_codes[counter],
+                                                                                Bbox,
+                                                                                BoundingBox_CropSize_GT,
                                                                                 ProgX,
-                                                                                divide_number_each_iteration, 
-                                                                                dict_class_id_3D_points, 
-                                                                                intrinsic_matrix=cam_K)    
+                                                                                divide_number_each_iteration,
+                                                                                dict_class_id_3D_points,
+                                                                                intrinsic_matrix=cam_K)
 
                     add_error = 10000
                     if success:
@@ -323,15 +328,15 @@ def main(configs):
                     if add_error < obj_diameter*0.1:
                         ADD_passed[counter] = 1
                     ADD_error[counter] = add_error
-                    
+
 
                 ADD_passed = np.mean(ADD_passed)
                 ADD_error= np.mean(ADD_error)
 
                 writer.add_scalar('TRAIN_ADD/ADD_Train', ADD_passed, iteration_step)
                 writer.add_scalar('TRAIN_ADD/ADD_Error_Train', ADD_error, iteration_step)
-                
-    
+
+
                 ADD_passed = test_network_with_single_obj(net, test_loader, obj_diameter, writer, dict_class_id_3D_points, vertices, iteration_step, configs, 0,calc_add_and_adi=False)
                 print("ADD_passed", ADD_passed)
                 if ADD_passed >= best_score:
@@ -349,24 +354,86 @@ def main(configs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='BinaryCodeNet')
-    parser.add_argument('--cfg', type=str) # config file
-    parser.add_argument('--obj_name', type=str) # config file
+    parser.add_argument('--cfg', type=str)      # config file
+    parser.add_argument('--obj_name', type=str) # obj_name
     parser.add_argument('--sym_aware_training', type=str, choices=('True','False'), default='False') # config file
     args = parser.parse_args()
-    config_file = args.cfg
-    configs = parse_cfg(config_file)
-    configs['obj_name'] = args.obj_name
-    configs['sym_aware_training'] = (args.sym_aware_training == 'True')
-    
+    #config_file = 
+    #configs = parse_cfg(config_file)
+    #configs['obj_name'] = args.obj_name
+    args.obj_name = 'obj01'
+    #configs['sym_aware_training'] = (args.sym_aware_training == 'True')
+    configs = {
+      ### args
+      'obj_name': args.obj_name,
+      'sym_aware_training': (args.sym_aware_training == 'True'),
+      ### training dataset
+      'bop_challange': cfg_file.bop_challenge,
+      'dataset_name':  cfg_file.dataset_name,
+      'training_data_folder': cfg_file.training_data_folder,
+      'training_data_folder_2': cfg_file.training_data_folder_2,
+      'val_folder':  cfg_file.val_folder,
+      'test_folder':  cfg_file.test_folder,
+      'second_dataset_ratio':  cfg_file.second_dataset_ratio,
+      'num_workers':  cfg_file.num_workers,
+      'train_obj_visible_threshold':  cfg_file.train_obj_visible_threshold,
+
+      ### Paths
+
+      'bop_path': cfg_file.bop_path,
+
+      'check_point_path': cfg_file.check_point_path,
+      'tensorboard_path': cfg_file.tensorboard_path,
+
+      ### Network settings
+      'BoundingBox_CropSize_image': cfg_file.BoundingBox_CropSize_image,
+      'BoundingBox_CropSize_GT': cfg_file.BoundingBox_CropSize_GT,
+
+      'BinaryCode_Loss_Type': cfg_file.BinaryCode_Loss_Type,
+      'mask_binary_code_loss': cfg_file.mask_binary_code_loss,
+      'predict_entire_mask': cfg_file.predict_entire_mask,
+
+      'use_histgramm_weighted_binary_loss': cfg_file.use_histgramm_weighted_binary_loss,
+
+      'output_kernel_size': cfg_file.output_kernel_size,
+
+      'resnet_layer': cfg_file.resnet_layer,
+      'concat_encoder_decoder': cfg_file.concat_encoder_decoder,
+      'load_checkpoint': cfg_file.load_checkpoint,
+      'use_progressive_x': cfg_file.use_progressive_x,
+      ### Optimizer
+      'optimizer_type': cfg_file.optimizer_type,
+      'learning_rate': cfg_file.learning_rate,
+      'batch_size': cfg_file.batch_size,
+      'total_iteration': cfg_file.total_iteration,
+
+      'binary_loss_weight': cfg_file.binary_loss_weight,
+      ####
+
+
+      #### augmentations
+      'Detection_results': cfg_file.Detection_results,
+
+      'padding_ratio': cfg_file.padding_ratio,
+      'resize_method': cfg_file.resize_method,
+
+      'use_peper_salt': cfg_file.use_peper_salt,
+      'use_motion_blur': cfg_file.use_motion_blur,
+
+      #binary coding settings
+      'divide_number_each_iteration': cfg_file.divide_number_each_iteration,
+      'number_of_iterations': cfg_file.number_of_iterations,
+}
 
     check_point_path = configs['check_point_path']
-    print('cptk path',check_point_path)
     tensorboard_path= configs['tensorboard_path']
 
-    config_file_name = os.path.basename(config_file)
-    config_file_name = os.path.splitext(config_file_name)[0]
-    check_point_path = check_point_path + config_file_name
-    tensorboard_path = tensorboard_path + config_file_name
+    config_file_name = os.path.basename(cfg_file.file_name)
+    print('config_file_name',config_file_name)
+    config_file_name = os.path.splitext(cfg_file.file_name)[0]
+    print('config_file_name',config_file_name)
+    check_point_path = configs['check_point_path'] + config_file_name
+    tensorboard_path = configs['tensorboard_path'] + config_file_name
     configs['check_point_path'] = check_point_path + args.obj_name + '/'
     configs['tensorboard_path'] = tensorboard_path + args.obj_name + '/'
 
@@ -381,5 +448,6 @@ if __name__ == "__main__":
     #print the configurations
     for key in configs:
         print(key, " : ", configs[key], flush=True)
+    print('configs:', configs)
 
     main(configs)
