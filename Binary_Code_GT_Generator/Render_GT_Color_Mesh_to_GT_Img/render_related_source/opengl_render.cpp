@@ -36,8 +36,7 @@ opengl_render::opengl_render(const unsigned int &IMG_WIDTH_, const unsigned int 
     }
 
     //complie the shader
-    std::string base_path("/home/ysu/project/zebrapose/Binary_Code_GT_Generator/Render_GT_Color_Mesh_to_GT_Img/render_related_source/");
-
+    std::string base_path("/home/pmvanderburg/ZebraPose/Binary_Code_GT_Generator/Render_GT_Color_Mesh_to_GT_Img/render_related_source/");
     std::string vs_groundtruth_path = base_path + "shader_groundtruth.vs";
     std::string fs_groundtruth_path = base_path + "shader_groundtruth.fs";
     Shader_3DModel_GT = new Shader(vs_groundtruth_path.c_str(), fs_groundtruth_path.c_str());
@@ -182,9 +181,9 @@ void opengl_render::rendering_GT_once(const Eigen::Matrix4f &P_Matrix, const int
     glDepthFunc(GL_LESS);  
     render_3D_GT_Model(P_Matrix, model_id);
 
-    glFlush();
-    glfwSwapBuffers(window);
-    glfwPollEvents(); 
+    //glFlush();
+    //glfwSwapBuffers(window);
+    //glfwPollEvents(); 
 }
 
 
