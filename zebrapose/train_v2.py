@@ -5,9 +5,12 @@ sys.path.insert(0, os.getcwd())
 
 #from config_parser import parse_cfg
 
+## import config files, TODO make if constructs so they are imported base on command line args
 #from config.config_BOP.lmo import exp_lmo_BOP as cfg_file
 #from config.config_BOP.lmo import exp_lmo_BOP as cfg_file
 from config.config_BOP.tudl import exp_tudl_BOP as cfg_file
+from config.config_BOP.ycbv import exp_ycbv BOP as cfg_file
+from config.config_BOP.husky import exp_husky_BOP as cfg_file
 
 import argparse
 
@@ -119,7 +122,8 @@ def main(configs):
 
     ########################## define data loader
     batch_size_1_dataset, batch_size_2_dataset = get_batch_size(second_dataset_ratio, batch_size)
-
+    print('batch_size_1_dataset',batch_size_1_dataset)
+    print('batch_size_2_dataset',batch_size_2_dataset)
     train_dataset = bop_dataset_single_obj_pytorch(
                                                     dataset_dir, training_data_folder, rgb_files[obj_id], mask_files[obj_id], mask_visib_files[obj_id], 
                                                     gts[obj_id], gt_infos[obj_id], cam_params[obj_id], True, BoundingBox_CropSize_image, 
@@ -180,7 +184,7 @@ def main(configs):
                                         )
     
     print("number of test images: ", len(test_dataset), flush=True)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=num_workers)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=4, shuffle=False, num_workers=num_workers)
 
     #############build the network 
     binary_code_length = number_of_iterations
