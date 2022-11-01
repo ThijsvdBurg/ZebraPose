@@ -33,12 +33,7 @@ bop_renderer_path = r'/path/to/bop_renderer/build'
 meshlab_server_path = r'/usr/bin/meshlabserver'
 
 # Custom
-dataset_name = 'tudl'
-#dataset_name = 'husky'
-#dataset_name = 'lmo'
-#dataset_name = 'husky_devel'
-#dataset_split = 'test'
-dataset_split = 'train_real'
+
 num_workers = 6
 batch_size = 8
 visib_thresh = 0.2
@@ -46,4 +41,4 @@ BBox_CropSize_image = 256
 BBox_CropSize_GT = 128
 ckpt_path=r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/6dof_pose_experiments/experiments/checkpoints/'
 tensorboard_path=r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/6dof_pose_experiments/experiments/tensorboard_logs/runs/'
-efficientnet_key='none'
+efficientnet_key=None

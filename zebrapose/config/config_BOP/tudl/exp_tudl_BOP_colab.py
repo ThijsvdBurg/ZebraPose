@@ -39,8 +39,8 @@ use_progressive_x = False
 
 #### check points
 load_checkpoint=False
-check_point_path=base_config.ckpt_path
-tensorboard_path=base_config.tensorboard_path
+check_point_path='/content/gdrive/MyDrive/6dof_pose_experiments/experiments/checkpoints/'
+tensorboard_path='/content/gdrive/MyDrive/6dof_pose_experiments/experiments/tensorboard_logs/runs/'
 ####
 
 
