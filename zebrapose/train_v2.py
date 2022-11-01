@@ -8,8 +8,8 @@ sys.path.insert(0, os.getcwd())
 ## import config files, TODO make if constructs so they are imported base on command line args
 #from config.config_BOP.lmo import exp_lmo_BOP as cfg_file
 #from config.config_BOP.lmo import exp_lmo_BOP as cfg_file
-from config.config_BOP.tudl import exp_tudl_BOP as cfg_file
-from config.config_BOP.ycbv import exp_ycbv BOP as cfg_file
+# from config.config_BOP.tudl import exp_tudl_BOP as cfg_file
+# from config.config_BOP.ycbv import exp_ycbv BOP as cfg_file
 from config.config_BOP.husky import exp_husky_BOP as cfg_file
 
 import argparse
