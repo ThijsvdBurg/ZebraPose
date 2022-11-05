@@ -192,7 +192,7 @@ def main(configs):
                                             use_peper_salt=use_peper_salt, use_motion_blur=use_motion_blur
                                         )
     print("test image example:", test_rgb_files[obj_id][0], flush=True)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=num_workers)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=num_workers)
 
     binary_code_length = number_of_iterations
     print("predicted binary_code_length", binary_code_length)
