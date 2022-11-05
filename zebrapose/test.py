@@ -89,10 +89,12 @@ def main(configs):
     BinaryCode_Loss_Type = configs['BinaryCode_Loss_Type']              # now only support "L1" or "BCE"
     output_kernel_size = configs['output_kernel_size']                  # last layer kernel size
     resnet_layer = configs['resnet_layer']                              # usually resnet 34
-    concat=configs['concat_encoder_decoder']   
+    concat=configs['concat_encoder_decoder']
     if 'efficientnet_key' in configs.keys():
-        efficientnet_key = configs['efficientnet_key']                
-    ProgX = configs['use_progressive_x']
+        efficientnet_key = configs['efficientnet_key']
+    else:
+        efficientnet_key = None
+    ProgX = 0 #configs['use_progressive_x']
     #### augmentations
     Detection_results=configs['Detection_results']                       # for the test, the detected bounding box provided by GDR Net
     padding_ratio=configs['padding_ratio']                               # pad the bounding box for training and test
