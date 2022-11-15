@@ -1,12 +1,12 @@
 #### training dataset
-##for ycbv, bop_challange = False during the training
-bop_challange = False
+bop_challange = True
+#bop_path = /media/pmvanderburg/T7/bop_datasets
 bop_path = /home/pmvanderburg/noetic-husky/datasets/bop_datasets
 dataset_name = husky
 training_data_folder = train_real
 training_data_folder_2 = train_pbr
-val_folder = test_obj04
-test_folder = test_obj04
+val_folder = test
+test_folder = test_17
 second_dataset_ratio = 0.875
 num_workers = 8
 train_obj_visible_threshold = 0.2
@@ -33,7 +33,7 @@ use_progressive_x = 0
 
 
 #### check points
-load_checkpoint=True
+load_checkpoint=False
 check_point_path=/home/pmvanderburg/noetic-husky/datasets/bop_datasets/6dof_pose_experiments/experiments/checkpoints
 tensorboard_path=/home/pmvanderburg/noetic-husky/datasets/bop_datasets/6dof_pose_experiments/experiments/tensorboard_logs/runs
 ####

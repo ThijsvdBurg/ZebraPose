@@ -5,14 +5,14 @@ from .. import base_config
 
 #### training dataset
 ##for lmo, bop_challange = False during the training
-bop_challenge = True
+bop_challenge = False
 bop_path = base_config.datasets_path
-file_name = 'exp_husky_bop_py'
+file_name = 'exp_husky_bop_py_v2_'
 dataset_name = 'husky'
-training_data_folder = 'train_real'
+training_data_folder = 'train_real_v2'
 training_data_folder_2 = 'none'
-val_folder = 'test'
-test_folder = 'test'
+val_folder = 'test_v2'
+test_folder = 'test_v2'
 second_dataset_ratio = 0.875
 num_workers = base_config.num_workers
 train_obj_visible_threshold = base_config.visib_thresh
@@ -38,7 +38,7 @@ use_progressive_x = False
 
 
 #### check points
-load_checkpoint=False
+load_checkpoint=True
 check_point_path=base_config.ckpt_path
 tensorboard_path=base_config.tensorboard_path
 ####
@@ -48,7 +48,7 @@ tensorboard_path=base_config.tensorboard_path
 optimizer_type = 'Adam'
 learning_rate = 0.0002
 batch_size = base_config.batch_size
-total_iteration = 380000
+total_iteration = 3001
 
 binary_loss_weight = 3
 #### 

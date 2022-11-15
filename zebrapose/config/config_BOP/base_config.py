@@ -18,7 +18,7 @@ else:
 results_path = r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/pose_results'
 
 # Folder for the calculated pose errors and performance scores.
-eval_path = r'/path/to/eval/folder'
+eval_path = r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/performance'
 
 ######## Extended ########
 
