@@ -98,6 +98,7 @@ def main(configs):
         Calculate_Pose_Error = Calculate_ADI_Error_BOP
     else:
         Calculate_Pose_Error = Calculate_ADD_Error_BOP
+
     mesh_path = model_plys[obj_id+1]         # mesh_path is a dict, the obj_id should start from 1
     print(mesh_path, flush=True)
     obj_diameter = model_info[str(obj_id+1)]['diameter']
@@ -289,7 +290,7 @@ def main(configs):
             writer.add_scalar('Loss/training loss binary code', loss_b, iteration_step)
 
             # test the trained CNN
-            log_freq = 100
+            log_freq = 250
 
             if (iteration_step)%log_freq == 0:
                 if binarycode_loss.histogram is not None:
@@ -365,7 +366,7 @@ if __name__ == "__main__":
     #config_file = 
     #configs = parse_cfg(config_file)
     #configs['obj_name'] = args.obj_name
-    args.obj_name = 'obj01'
+    #args.obj_name = 'obj01'
     #configs['sym_aware_training'] = (args.sym_aware_training == 'True')
     configs = {
       ### args
