@@ -8,7 +8,7 @@ def main(input_dir, output_fn):
 
     extension = 'csv'
     all_filenames = [i for i in glob.glob('*.{}'.format(extension))]
-    print(all_filenames)
+    print('files considered:',all_filenames)
     #combine all files in the list
     combined_csv = pd.concat([pd.read_csv(f) for f in all_filenames ])
     #export to csv
