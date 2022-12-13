@@ -7,12 +7,12 @@ from .. import base_config
 ##for lmo, bop_challange = False during the training
 bop_challenge = False
 bop_path = base_config.datasets_path
-file_name = 'exp_husky_bop_py_v2_'
+file_name = 'exp_husky_bop_py_v3_'
 dataset_name = 'husky'
-training_data_folder = 'train_real_v2'
+training_data_folder = 'train'
 training_data_folder_2 = 'none'
-val_folder = 'test_v2'
-test_folder = 'test_v2'
+val_folder = 'test'
+test_folder = 'test'
 second_dataset_ratio = 0.875
 num_workers = base_config.num_workers
 train_obj_visible_threshold = base_config.visib_thresh

@@ -100,10 +100,14 @@ tless_symmetry_obj = ['obj{:02d}'.format(obj_id+1) for obj_id in range(0,30)]
 
 ##### husky
 husky_obj_name_obj_id = {
-    #'obj01': 1,
-    #'obj02': 2,
+    'obj01': 1,
+    'obj02': 2,
     'obj03': 3,
-    'obj04': 4
+    'obj04': 4,
+    'obj05': 5,
+    'obj06': 6,
+    'obj07': 7,
+    'obj08': 8,
 }
 
 
