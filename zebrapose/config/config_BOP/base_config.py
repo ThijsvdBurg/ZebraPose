@@ -15,30 +15,17 @@ else:
   datasets_path = r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets'
 
 # Folder with pose results to be evaluated.
-results_path = r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/pose_results'
+results_path =  datasets_path # r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/pose_results'
 
 # Folder for the calculated pose errors and performance scores.
-eval_path = r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/performance'
-
-######## Extended ########
-
-# Folder for outputs (e.g. visualizations).
-output_path = r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets'
-
-# For offscreen C++ rendering: Path to the build folder of bop_renderer (github.com/thodan/bop_renderer).
-bop_renderer_path = r'/path/to/bop_renderer/build'
-
-# Executable of the MeshLab server.
-#meshlab_server_path = r'/path/to/meshlabserver.exe'
-meshlab_server_path = r'/usr/bin/meshlabserver'
+eval_path =  datasets_path # r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/performance'
 
 # Custom
-
-num_workers = 6
-batch_size = 8
+#num_workers = 8
+#batch_size = 4
 visib_thresh = 0.2
 BBox_CropSize_image = 256
 BBox_CropSize_GT = 128
-ckpt_path=r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/6dof_pose_experiments/experiments/checkpoints/'
-tensorboard_path=r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/6dof_pose_experiments/experiments/tensorboard_logs/runs/'
+ckpt_path=os.path.join(datasets_path,'6dof_pose_experiments','experiments','checkpoints')
+tensorboard_path=os.path.join(datasets_path,'6dof_pose_experiments','experiments','tensorboard_logs','runs') # r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/6dof_pose_experiments/experiments/tensorboard_logs/runs/'
 efficientnet_key=None

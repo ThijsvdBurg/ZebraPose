@@ -7,14 +7,13 @@ from .. import base_config
 ##for lmo, bop_challange = False during the training
 bop_challenge = False
 bop_path = base_config.datasets_path
-file_name = 'exp_husky_bop_py_v3_'
 dataset_name = 'husky'
 training_data_folder = 'train'
 training_data_folder_2 = 'none'
 val_folder = 'test'
 test_folder = 'test'
 second_dataset_ratio = 0.875
-num_workers = base_config.num_workers
+num_workers = 8 #base_config.num_workers
 train_obj_visible_threshold = base_config.visib_thresh
 ####
 
@@ -38,7 +37,7 @@ use_progressive_x = False
 
 
 #### check points
-load_checkpoint=True
+load_checkpoint=False
 check_point_path=base_config.ckpt_path
 tensorboard_path=base_config.tensorboard_path
 ####
@@ -47,11 +46,11 @@ tensorboard_path=base_config.tensorboard_path
 #### optimizer
 optimizer_type = 'Adam'
 learning_rate = 0.0002
-batch_size = base_config.batch_size
-total_iteration = 3001
+batch_size = 4 #base_config.batch_size
+total_iteration = 8001
 
 binary_loss_weight = 3
-#### 
+####
 
 
 #### augmentations
@@ -66,3 +65,6 @@ use_motion_blur= True
 #binary coding settings
 divide_number_each_iteration = 2
 number_of_iterations = 16
+
+# data dependent file name
+file_name = 'exp_' + dataset_name + '_BOP_' + str(num_workers) +'xWorkers_'+ str(batch_size) +'xBatch'

@@ -123,6 +123,7 @@ def main(configs):
 
     ########################## define data loader
     batch_size_1_dataset, batch_size_2_dataset = get_batch_size(second_dataset_ratio, batch_size)
+    print('number of cpu cores is',os.cpu_count(), flush=True)
     print('batch_size_1_dataset',batch_size_1_dataset)
     print('batch_size_2_dataset',batch_size_2_dataset)
     train_dataset = bop_dataset_single_obj_pytorch(
@@ -290,7 +291,7 @@ def main(configs):
             writer.add_scalar('Loss/training loss binary code', loss_b, iteration_step)
 
             # test the trained CNN
-            log_freq = 250
+            log_freq = 1000
 
             if (iteration_step)%log_freq == 0:
                 if binarycode_loss.histogram is not None:
@@ -359,14 +360,12 @@ def main(configs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='BinaryCodeNet')
-    parser.add_argument('--cfg', type=str)      # config file
+    parser.add_argument('--cfg_suffix', type=str)      # config file
     parser.add_argument('--obj_name', type=str) # obj_name
     parser.add_argument('--sym_aware_training', type=str, choices=('True','False'), default='False') # config file
     args = parser.parse_args()
-    #config_file = 
+    #config_file =
     #configs = parse_cfg(config_file)
-    #configs['obj_name'] = args.obj_name
-    #args.obj_name = 'obj01'
     #configs['sym_aware_training'] = (args.sym_aware_training == 'True')
     configs = {
       ### args
@@ -433,16 +432,20 @@ if __name__ == "__main__":
     check_point_path = configs['check_point_path']
     tensorboard_path= configs['tensorboard_path']
 
-    config_file_name = os.path.basename(cfg_file.file_name)
-    print('config_file_name',config_file_name)
+    print('check_point_path typre and value:',type(check_point_path),check_point_path)
+
+    #config_file_name = os.path.basename(cfg_file.file_name)
+    #print('config_file_name',config_file_name)
     config_file_name = os.path.splitext(cfg_file.file_name)[0]
-    print('config_file_name',config_file_name)
-    check_point_path = configs['check_point_path'] + config_file_name
-    tensorboard_path = configs['tensorboard_path'] + config_file_name
+    print('config_file_name',type(config_file_name))
+
+    configs['config_file_name'] = config_file_name + args.cfg_suffix
+    check_point_path = configs['check_point_path'] + '/' + configs['config_file_name']
+    tensorboard_path = configs['tensorboard_path'] + '/' + configs['config_file_name']
+
     configs['check_point_path'] = check_point_path + args.obj_name + '/'
     configs['tensorboard_path'] = tensorboard_path + args.obj_name + '/'
 
-    configs['config_file_name'] = config_file_name
 
     if configs['Detection_results'] != 'none':
         Detection_results = configs['Detection_results']
@@ -456,3 +459,4 @@ if __name__ == "__main__":
     print('configs:', configs)
 
     main(configs)
+    print('done...')
