@@ -10,7 +10,7 @@ sys.path.insert(0, os.getcwd())
 #from config.config_BOP.lmo import exp_lmo_BOP as cfg_file
 # from config.config_BOP.tudl import exp_tudl_BOP as cfg_file
 # from config.config_BOP.ycbv import exp_ycbv BOP as cfg_file
-from config.config_BOP.husky import exp_husky_BOP as cfg_file
+from config.config_BOP.husky import exp_husky_BOP_blue as cfg_file
 
 import argparse
 
@@ -291,7 +291,7 @@ def main(configs):
             writer.add_scalar('Loss/training loss binary code', loss_b, iteration_step)
 
             # test the trained CNN
-            log_freq = 1000
+            log_freq = configs['log_freq']
 
             if (iteration_step)%log_freq == 0:
                 if binarycode_loss.histogram is not None:
@@ -347,7 +347,9 @@ def main(configs):
                 print("ADD_passed", ADD_passed)
                 if ADD_passed >= best_score:
                     best_score = ADD_passed
-                    print("best_score", best_score)
+                    print("best_score", best_score, flush=True)
+                    print("best_score_path", best_score_path, flush=True)
+                    print("it step", iteration_step, flush=True)
                     save_best_checkpoint(best_score_path, net, optimizer, best_score, iteration_step)
 
             iteration_step = iteration_step + 1
@@ -404,7 +406,9 @@ if __name__ == "__main__":
       'resnet_layer': cfg_file.resnet_layer,
       'concat_encoder_decoder': cfg_file.concat_encoder_decoder,
       'load_checkpoint': cfg_file.load_checkpoint,
+      'log_freq': cfg_file.log_freq,
       'use_progressive_x': cfg_file.use_progressive_x,
+
       ### Optimizer
       'optimizer_type': cfg_file.optimizer_type,
       'learning_rate': cfg_file.learning_rate,
@@ -432,14 +436,10 @@ if __name__ == "__main__":
     check_point_path = configs['check_point_path']
     tensorboard_path= configs['tensorboard_path']
 
-    print('check_point_path typre and value:',type(check_point_path),check_point_path)
-
-    #config_file_name = os.path.basename(cfg_file.file_name)
-    #print('config_file_name',config_file_name)
     config_file_name = os.path.splitext(cfg_file.file_name)[0]
     print('config_file_name',type(config_file_name))
 
-    configs['config_file_name'] = config_file_name + args.cfg_suffix
+    configs['config_file_name'] = config_file_name + '_' + args.cfg_suffix
     check_point_path = configs['check_point_path'] + '/' + configs['config_file_name']
     tensorboard_path = configs['tensorboard_path'] + '/' + configs['config_file_name']
 

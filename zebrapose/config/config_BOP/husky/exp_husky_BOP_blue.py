@@ -13,7 +13,7 @@ training_data_folder_2 = 'none'
 val_folder = 'test'
 test_folder = 'test'
 second_dataset_ratio = 0.875
-num_workers = 4 #base_config.num_workers
+num_workers = 2 #base_config.num_workers
 train_obj_visible_threshold = base_config.visib_thresh
 ####
 
@@ -36,22 +36,21 @@ use_progressive_x = False
 ####
 
 
-#### check points
-load_checkpoint=False
-check_point_path=base_config.ckpt_path
-tensorboard_path=base_config.tensorboard_path
-####
-
-
 #### optimizer
 optimizer_type = 'Adam'
 learning_rate = 0.0002
-batch_size = 8 #base_config.batch_size
+batch_size = 32 #base_config.batch_size
 total_iteration = 180001
 
 binary_loss_weight = 3
 ####
 
+#### check points
+load_checkpoint=False
+check_point_path=base_config.ckpt_path
+tensorboard_path=base_config.tensorboard_path
+log_freq=4000/batch_size
+####
 
 #### augmentations
 Detection_results = 'none' # r'detection_results/ycbv/fcos_V57eSE_MSx1333_ColorAugAAEWeaker_8e_ycbv_real_pbr_8e_test_keyframe.json'
