@@ -186,7 +186,7 @@ def main(configs):
                                         )
     
     print("number of test images: ", len(test_dataset), flush=True)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=4, shuffle=False, num_workers=num_workers)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=num_workers)
 
     #############build the network 
     binary_code_length = number_of_iterations
