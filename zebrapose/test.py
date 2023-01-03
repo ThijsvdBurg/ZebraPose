@@ -18,12 +18,13 @@ import numpy as np
 import cv2
 
 from binary_code_helper.CNN_output_to_pose import load_dict_class_id_3D_points, CNN_outputs_to_object_pose
-sys.path.append("../bop_toolkit")
+#sys.path.append("../bop_toolkit")
 from bop_toolkit_lib import inout
 
 from model.BinaryCodeNet import BinaryCodeNet_Deeplab
 
 from metric import Calculate_ADD_Error_BOP, Calculate_ADI_Error_BOP
+# calculations can be found in https://github.com/ThijsvdBurg/bop_toolkit/blob/784932032d448ba31bb8493f67e9a68d1c658832/bop_toolkit_lib/pose_error.py#L147
 
 from get_detection_results import ycbv_select_keyframe
 from common_ops import from_output_to_class_mask, from_output_to_class_binary_code, compute_original_mask
@@ -403,6 +404,7 @@ if __name__ == "__main__":
     config_file = args.cfg
     checkpoint_file = args.ckpt_file
     eval_output_path = args.eval_output_path
+    #eval_output_path = /media/pmvanderburg/T7/bop_datasets # args.eval_output_path
     obj_name = args.obj_name
     configs = parse_cfg(config_file)
 
