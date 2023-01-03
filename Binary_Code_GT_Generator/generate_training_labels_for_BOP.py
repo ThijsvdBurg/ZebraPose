@@ -30,7 +30,7 @@ def generate_GT_images(bop_path, dataset_name, force_rewrite, is_training_data, 
     Render.init(camera_parameters, 1)
     model_scale = 0.1
     
-    for model_to_render in range(start_obj_id, end_obj_id):
+    for model_to_render in range(start_obj_id-1, end_obj_id):
         # only bind 1 model each time
         model_to_render = int(model_to_render)
         ply_fn = dataset_dir+"/models_GT_color/obj_{:06d}.ply".format(int(model_ids[model_to_render]))
