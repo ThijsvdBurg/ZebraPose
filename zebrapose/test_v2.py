@@ -20,6 +20,7 @@ import cv2
 from binary_code_helper.CNN_output_to_pose import load_dict_class_id_3D_points, CNN_outputs_to_object_pose
 #sys.path.append("../bop_toolkit")
 from bop_toolkit_lib import inout
+from bop_toolkit_lib import visualization
 
 from model.BinaryCodeNet import BinaryCodeNet_Deeplab
 
@@ -221,6 +222,7 @@ def main(configs):
     # error thresholds and AUC definitions
     auc_resolution=10
     abs_error_threshold = obj_diameter * diameter_threshold
+    ### wrong auc threshold linspace ###
     th = np.linspace(10, 100, num=10)
     AUC_lower = 0.1 * abs_error_threshold
     AUC_upper = abs_error_threshold
@@ -231,7 +233,7 @@ def main(configs):
     ADX_error=np.zeros(len(test_loader.dataset))
     AUC_ADX_error1=np.zeros(len(test_loader.dataset))
     AUC_ADX_error2=np.zeros(len(test_loader.dataset))
-    AUC_ADX_passed=np.zeros((len(test_loader.dataset),len(th2)))
+    AUC_ADX_passed=np.zeros((auc_resolution,len(test_loader.dataset)))
     if calc_add_and_adi:
         ADY_passed=np.zeros(len(test_loader.dataset))
         ADY_error=np.zeros(len(test_loader.dataset))
@@ -323,12 +325,12 @@ def main(configs):
                     adx_error = 10000
             
             if adx_error < abs_error_threshold:
-                print('adx_error ', adx_error, ' of batch index ', batch_idx,' was below ',obj_diameter*diameter_threshold,'threshold, ADX_passed[batch_idx] set to 1')
+                #print('adx_error ', adx_error, ' of batch index ', batch_idx,' was below ',obj_diameter*diameter_threshold,'threshold, ADX_passed[batch_idx] set to 1')
                 ADX_passed[batch_idx] = 1
 
             ADX_error[batch_idx] = adx_error
             ### PMB DEBUG introspection ###
-            print('ADX_error[batch_idx] = adx_error is',ADX_error[batch_idx], '\nnow making linspace for AUC')
+            #print('ADX_error[batch_idx] = adx_error is',ADX_error[batch_idx], '\nnow making linspace for AUC')
             ###############################
             
             sum_correct = 0
@@ -345,7 +347,7 @@ def main(configs):
                     # AUC_ADX_passed=np.zeros((len(test_loader.dataset),len(th2)))
                     AUC_ADX_passed[AUC_idx][batch_idx] = 1
                     sum_correct = sum_correct + 1
-                print('AUC_idx:',AUC_idx)
+                # print('AUC_idx:',AUC_idx)
                 AUC_idx = AUC_idx + 1
             AUC_ADX_error2[batch_idx] = sum_correct/10
            
@@ -379,20 +381,25 @@ def main(configs):
     print('{}/{}_mean'.format(main_metric_name,main_metric_name), ADX_error_mean,'mm')
     AUC_ADX_error1 = np.mean(AUC_ADX_error1)
     print('{}/{}'.format(main_metric_name,main_metric_name), ADX_passed)
-    print('AUC_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error1)
+    print('erroneous AUC_1_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error1)
     AUC_ADX_error2 = np.mean(AUC_ADX_error2)
     # print('{}/{}'.format(main_metric_name,main_metric_name), ADX_passed2)
-    print('AUC_2_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error2)
+    print('Correct AUC_2_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error2)
     
     ### correct AUC calculation ###
     # AUC_ADX_passed[batch_idx][AUC_idx]
     AUC_cumulative = np.zeros(auc_resolution)
-    for i in enumerate(AUC_ADX_passed):
-        AUC_cumulative[i] = np.mean(AUC_ADX_passed[i,:])
+    
+    for i,passed in enumerate(AUC_ADX_passed):
+        AUC_cumulative[i] = np.mean(AUC_ADX_passed[i])
+        
+    ### visualize AUC graph ###
+    visualization.AUC_graph(AUC_cumulative, auc_resolution, diameter_threshold)
+
 
     AUC_ADX_passed = np.mean(AUC_ADX_passed)
     print('AUC_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_passed)
-    print('Cumulative AUC_{}/{}'.format(main_metric_name,main_metric_name), AUC_cumulative)
+    print('Cumulative AUC_1{}/{}'.format(main_metric_name,main_metric_name), AUC_cumulative)
     AUC_ADX_error_posecnn = compute_auc_posecnn(ADX_error/1000.)
     print('AUC_posecnn_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error_posecnn)
 
@@ -410,24 +417,40 @@ def main(configs):
         path = os.path.join(eval_output_path, "ADD_result/")
         if not os.path.exists(path):
             os.makedirs(path)
-        path = path + "{}_{}".format(dataset_name, obj_name) + ".txt" 
+        path1 = path + "{}_{}".format(dataset_name, obj_name) + ".txt" 
+        path_AUC = path + "{}_{}_{}".format(dataset_name, obj_name,diameter_threshold) + "_AUC.npy" 
         #path = path + dataset_name + obj_name  + "ignorebit_" + str(configs['ignore_bit']) + ".txt"
         #path = path + dataset_name + obj_name + "radix" + "_" + str(divide_number_each_iteration)+"_"+str(number_of_iterations) + ".txt"
-        print('save ADD results to', path)
-        print(path)
-        f = open(path, "w")
+        print('save ADD results to', path1)
+        print(path1)
+        f = open(path1, "w")
+        #auc = open(path_AUC, "w")
+        ### ADD ###
         f.write('{}/{} '.format(main_metric_name,main_metric_name))
         f.write(str(ADX_passed.item()))
         f.write('\n')
+        ### correct AUC ADD ###
         f.write('AUC_{}/{} '.format(main_metric_name,main_metric_name))
+        f.write(str(AUC_ADX_error2.item()))
+        f.write('\n')
+        ### Cumulative AUC ADD ###
+        f.write('Cumulative AUC_{}/{} '.format(main_metric_name,main_metric_name))
+        f.write(str(AUC_cumulative)) #.item()))
+        f.write('\n')
+        np.save(path_AUC,AUC_cumulative)
+        ### AUC ADD ###
+        f.write('Erroneous AUC_{}/{} '.format(main_metric_name,main_metric_name))
         f.write(str(AUC_ADX_error1.item()))
         f.write('\n')
-        f.write('AUC_posecnn_{}/{} '.format(main_metric_name,main_metric_name))
+        ### posecnn AUC ###
+        f.write('Erroneous AUC_posecnn_{}/{} '.format(main_metric_name,main_metric_name))
         f.write(str(AUC_ADX_error_posecnn.item()))
         f.write('\n')
+        ### AUC ADI ###
         f.write('AUC_{}/{} '.format(supp_metric_name,supp_metric_name))
         f.write(str(AUC_ADY_error.item()))
         f.write('\n')
+        ### AUC posecnn ADI
         f.write('AUC_posecnn_{}/{} '.format(main_metric_name,main_metric_name))
         f.write(str(AUC_ADY_error_posecnn.item()))
         f.write('\n')
