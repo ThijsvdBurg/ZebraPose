@@ -30,7 +30,6 @@ resnet_layer = 34
 concat_encoder_decoder = True
 
 use_progressive_x = 0
-diameter_threshold = 0.025
 ####
 
 

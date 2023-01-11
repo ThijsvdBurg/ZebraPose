@@ -72,6 +72,43 @@ def compute_auc_posecnn(errors):
     ap = ((mrec[ids] - mrec[ids-1]) * mpre[ids]).sum() * 10
     return ap
 
+def calc_AUC(adx_error, diameter_threshold, obj_diameter, res, batch_idx, AUC_ADX_passed, num_th): #, AUC_ADX_error):    # error thresholds and AUC definitions
+    
+    auc_resolution=res
+    abs_error_threshold = np.zeros(num_th)
+    #abs_error_threshold_base = obj_diameter * diameter_threshold
+    #for i in range(0, num_th):
+    #    abs_error_threshold[i] =
+    abs_error_threshold[0] = obj_diameter * diameter_threshold
+    abs_error_threshold[1] = obj_diameter * diameter_threshold * 0.5
+    abs_error_threshold[2] = obj_diameter * diameter_threshold * 0.25
+    
+    AUC_lower = 0.1 * abs_error_threshold
+    AUC_upper = abs_error_threshold
+    th = np.zeros((num_th,auc_resolution))
+    for i in range(0,num_th):
+        th[i] = np.linspace(0.1*(abs_error_threshold[i]), abs_error_threshold[i], num=auc_resolution)
+    #print(th)
+    # th2 = np.linspace(0.1*(abs_error_threshold2), abs_error_threshold2, num=auc_resolution)
+    # th3 = np.linspace(0.1*(abs_error_threshold3), abs_error_threshold3, num=auc_resolution)
+
+    ### correct AUC calculation ###
+
+    # for i in range(0,len(th)):
+    th_idx = 0
+    for i in th:
+        #sum_correct = 0
+        AUC_idx = 0        
+        for j in i:
+            if adx_error < j:
+                AUC_ADX_passed[th_idx][AUC_idx][batch_idx] = 1
+                #sum_correct = sum_correct + 1
+            AUC_idx = AUC_idx + 1
+        th_idx = th_idx + 1
+    #print(AUC_ADX_passed[:,:,batch_idx])
+    
+    return AUC_ADX_passed # , AUC_ADX_error
+
 
 def main(configs):
     #### training dataset
@@ -97,7 +134,13 @@ def main(configs):
     else:
         efficientnet_key = None
     ProgX = 0 #configs['use_progressive_x']
-    diameter_threshold = float(configs['diameter_threshold'])
+
+    #### metric params
+    diameter_threshold = 0.1 # float(configs['diameter_threshold'])
+    auc_resolution = 10
+    num_th = 3
+    calc_add_and_adi=True
+
     #### augmentations
     Detection_results=configs['Detection_results']                       # for the test, the detected bounding box provided by GDR Net
     padding_ratio=configs['padding_ratio']                               # pad the bounding box for training and test
@@ -113,7 +156,7 @@ def main(configs):
     torch.manual_seed(0)      # the both are only good for ablation study
     np.random.seed(0)         # if can be removed in the final experiments
 
-    calc_add_and_adi=True
+
 
     # get dataset informations
     dataset_dir,source_dir,model_plys,model_info,model_ids,rgb_files,depth_files,mask_files,mask_visib_files,gts,gt_infos,cam_param_global, cam_params = bop_io.get_dataset(bop_path,dataset_name, train=True, data_folder=training_data_folder, data_per_obj=True, incl_param=True, train_obj_visible_threshold=train_obj_visible_threshold)
@@ -219,21 +262,16 @@ def main(configs):
     net.eval()
 
     
-    # error thresholds and AUC definitions
-    auc_resolution=10
-    abs_error_threshold = obj_diameter * diameter_threshold
     ### wrong auc threshold linspace ###
     th = np.linspace(10, 100, num=10)
-    AUC_lower = 0.1 * abs_error_threshold
-    AUC_upper = abs_error_threshold
-    th2 = np.linspace(AUC_lower, AUC_upper, num=auc_resolution)
-
+    
     #test with test data
     ADX_passed=np.zeros(len(test_loader.dataset))
     ADX_error=np.zeros(len(test_loader.dataset))
-    AUC_ADX_error1=np.zeros(len(test_loader.dataset))
-    AUC_ADX_error2=np.zeros(len(test_loader.dataset))
-    AUC_ADX_passed=np.zeros((auc_resolution,len(test_loader.dataset)))
+    #AUC_ADX_error1=np.zeros(len(test_loader.dataset))
+    #AUC_ADX_error2=np.zeros(len(test_loader.dataset))
+    AUC_ADX_passed_orig=np.zeros((auc_resolution,len(test_loader.dataset)))
+    AUC_ADX_passed=np.zeros((num_th,auc_resolution,len(test_loader.dataset)))
     if calc_add_and_adi:
         ADY_passed=np.zeros(len(test_loader.dataset))
         ADY_error=np.zeros(len(test_loader.dataset))
@@ -324,33 +362,13 @@ def main(configs):
                 if np.isnan(adx_error):
                     adx_error = 10000
             
-            if adx_error < abs_error_threshold:
-                #print('adx_error ', adx_error, ' of batch index ', batch_idx,' was below ',obj_diameter*diameter_threshold,'threshold, ADX_passed[batch_idx] set to 1')
+            if adx_error < obj_diameter * diameter_threshold:
                 ADX_passed[batch_idx] = 1
 
             ADX_error[batch_idx] = adx_error
-            ### PMB DEBUG introspection ###
-            #print('ADX_error[batch_idx] = adx_error is',ADX_error[batch_idx], '\nnow making linspace for AUC')
-            ###############################
+                        
+            AUC_ADX_passed = calc_AUC(adx_error, diameter_threshold, obj_diameter, auc_resolution, batch_idx, AUC_ADX_passed,num_th)
             
-            sum_correct = 0
-            for t in th:
-                if adx_error < t:
-                    sum_correct = sum_correct + 1
-            AUC_ADX_error1[batch_idx] = sum_correct/10
-            
-            ### correct AUC calculation ###
-            sum_correct = 0
-            AUC_idx = 0
-            for t in th2:
-                if adx_error < t:
-                    # AUC_ADX_passed=np.zeros((len(test_loader.dataset),len(th2)))
-                    AUC_ADX_passed[AUC_idx][batch_idx] = 1
-                    sum_correct = sum_correct + 1
-                # print('AUC_idx:',AUC_idx)
-                AUC_idx = AUC_idx + 1
-            AUC_ADX_error2[batch_idx] = sum_correct/10
-           
             if calc_add_and_adi:
                 ady_error = 10000
                 if success and has_gt:
@@ -378,30 +396,39 @@ def main(configs):
     
     ADX_passed = np.mean(ADX_passed)
     ADX_error_mean= np.mean(ADX_error)
-    print('{}/{}_mean'.format(main_metric_name,main_metric_name), ADX_error_mean,'mm')
-    AUC_ADX_error1 = np.mean(AUC_ADX_error1)
+    #print('{}/{}_mean'.format(main_metric_name,main_metric_name), ADX_error_mean,'mm')
+    #AUC_ADX_error1 = np.mean(AUC_ADX_error1)
     print('{}/{}'.format(main_metric_name,main_metric_name), ADX_passed)
-    print('erroneous AUC_1_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error1)
-    AUC_ADX_error2 = np.mean(AUC_ADX_error2)
+    #print('erroneous AUC_1_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error1)
+    #AUC_ADX_error2 = np.mean(AUC_ADX_error2)
     # print('{}/{}'.format(main_metric_name,main_metric_name), ADX_passed2)
-    print('Correct AUC_2_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error2)
+    #print('Correct AUC_2_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error2)
     
     ### correct AUC calculation ###
     # AUC_ADX_passed[batch_idx][AUC_idx]
-    AUC_cumulative = np.zeros(auc_resolution)
+    AUC_cumulative = np.zeros((num_th,auc_resolution))
+    AUC_ADX = np.zeros(num_th)
     
-    for i,passed in enumerate(AUC_ADX_passed):
-        AUC_cumulative[i] = np.mean(AUC_ADX_passed[i])
-        
+    for i,th_grid in enumerate(AUC_ADX_passed):
+        for j, passed in enumerate(th_grid):
+            AUC_cumulative[i,j] = np.mean(th_grid[j])
+
     ### visualize AUC graph ###
-    visualization.AUC_graph(AUC_cumulative, auc_resolution, diameter_threshold)
+    # visualization.AUC_graph(AUC_cumulative, auc_resolution, diameter_threshold)
 
-
-    AUC_ADX_passed = np.mean(AUC_ADX_passed)
-    print('AUC_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_passed)
-    print('Cumulative AUC_1{}/{}'.format(main_metric_name,main_metric_name), AUC_cumulative)
-    AUC_ADX_error_posecnn = compute_auc_posecnn(ADX_error/1000.)
-    print('AUC_posecnn_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error_posecnn)
+    for i in range(0,num_th):
+        AUC_ADX[i] = np.mean(AUC_ADX_passed[i])
+    print('{}/{}_10%'.format(main_metric_name,main_metric_name), AUC_cumulative[0,9])
+    print('{}/{}_5%'.format(main_metric_name,main_metric_name), AUC_cumulative[1,9])
+    print('{}/{}_2.5%'.format(main_metric_name,main_metric_name), AUC_cumulative[2,9])
+    print('AUC_10%_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX[0])
+    print('AUC_5%_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX[1])
+    print('AUC_2.5%_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX[2])
+    print('Cumulative AUC_10%{}/{}'.format(main_metric_name,main_metric_name), AUC_cumulative[0])
+    print('Cumulative AUC_5%{}/{}'.format(main_metric_name,main_metric_name), AUC_cumulative[1])
+    print('Cumulative AUC_2.5%{}/{}'.format(main_metric_name,main_metric_name), AUC_cumulative[2])
+    #AUC_ADX_error_posecnn = compute_auc_posecnn(ADX_error/1000.)
+    #print('AUC_posecnn_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error_posecnn)
 
     if calc_add_and_adi:
         ADY_passed = np.mean(ADY_passed)
@@ -426,34 +453,53 @@ def main(configs):
         f = open(path1, "w")
         #auc = open(path_AUC, "w")
         ### ADD ###
-        f.write('{}/{} '.format(main_metric_name,main_metric_name))
+        f.write('{}/{}_10% '.format(main_metric_name,main_metric_name))
         f.write(str(ADX_passed.item()))
         f.write('\n')
-        ### correct AUC ADD ###
-        f.write('AUC_{}/{} '.format(main_metric_name,main_metric_name))
-        f.write(str(AUC_ADX_error2.item()))
+        ### ADD ###
+        f.write('{}/{}_10% '.format(main_metric_name,main_metric_name))
+        f.write(str(AUC_cumulative[0,9].item()))
         f.write('\n')
+        ### ADD ###
+        f.write('{}/{}_5% '.format(main_metric_name,main_metric_name))
+        f.write(str(AUC_cumulative[1,9].item()))
+        f.write('\n')
+        ### ADD ###
+        f.write('{}/{}_2.5% '.format(main_metric_name,main_metric_name))
+        f.write(str(AUC_cumulative[2,9].item()))
+        f.write('\n')
+        ### correct AUC ADD ###
+        #f.write('AUC_10%_{}/{} '.format(main_metric_name,main_metric_name))
+        #f.write(str(AUC_ADX_error2.item()))
+        #f.write('\n')
         ### Cumulative AUC ADD ###
-        f.write('Cumulative AUC_{}/{} '.format(main_metric_name,main_metric_name))
-        f.write(str(AUC_cumulative)) #.item()))
+        f.write('Cumulative AUC_{}/{}_10% '.format(main_metric_name,main_metric_name))
+        f.write(str(AUC_cumulative[0])) #.item()))
+        f.write('\n')
+        f.write('Cumulative AUC_{}/{}_5% '.format(main_metric_name,main_metric_name))
+        f.write(str(AUC_cumulative[1])) #.item()))
+        f.write('\n')
+        f.write('Cumulative AUC_{}/{}_2.5% '.format(main_metric_name,main_metric_name))
+        f.write(str(AUC_cumulative[2])) #.item()))
         f.write('\n')
         np.save(path_AUC,AUC_cumulative)
         ### AUC ADD ###
-        f.write('Erroneous AUC_{}/{} '.format(main_metric_name,main_metric_name))
-        f.write(str(AUC_ADX_error1.item()))
-        f.write('\n')
+        #f.write('Erroneous AUC_{}/{} '.format(main_metric_name,main_metric_name))
+        #f.write(str(AUC_ADX_error1.item()))
+        #f.write('\n')
         ### posecnn AUC ###
-        f.write('Erroneous AUC_posecnn_{}/{} '.format(main_metric_name,main_metric_name))
-        f.write(str(AUC_ADX_error_posecnn.item()))
-        f.write('\n')
+        #f.write('Erroneous AUC_posecnn_{}/{} '.format(main_metric_name,main_metric_name))
+        #f.write(str(AUC_ADX_error_posecnn.item()))
+        #f.write('\n')
         ### AUC ADI ###
-        f.write('AUC_{}/{} '.format(supp_metric_name,supp_metric_name))
-        f.write(str(AUC_ADY_error.item()))
-        f.write('\n')
+        #f.write('AUC_{}/{} '.format(supp_metric_name,supp_metric_name))
+        #f.write(str(AUC_ADY_error.item()))
+        #f.write('\n')
         ### AUC posecnn ADI
-        f.write('AUC_posecnn_{}/{} '.format(main_metric_name,main_metric_name))
-        f.write(str(AUC_ADY_error_posecnn.item()))
-        f.write('\n')
+        #f.write('AUC_posecnn_{}/{} '.format(main_metric_name,main_metric_name))
+        #f.write(str(AUC_ADY_error_posecnn.item()))
+        #f.write('\n')
+        ####
         f.close()
         ####
 
