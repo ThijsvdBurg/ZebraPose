@@ -6,3 +6,5 @@ Binary_Code_GT_Generator/Render_GT_Color_Mesh_to_GT_Img/glfw*
 Binary_Code_GT_Generator/Render_GT_Color_Mesh_to_GT_Img/render_related_source/glad
 Binary_Code_GT_Generator/Render_GT_Color_Mesh_to_GT_Img/render_related_source/eigen*
 .DS_Store
+
+6dof_pose_experiments/
