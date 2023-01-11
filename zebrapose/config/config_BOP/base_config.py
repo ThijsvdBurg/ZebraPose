@@ -21,8 +21,8 @@ results_path =  datasets_path # r'/home/pmvanderburg/noetic-husky/datasets/bop_d
 eval_path =  datasets_path # r'/home/pmvanderburg/noetic-husky/datasets/bop_datasets/performance'
 
 # Custom
-#num_workers = 8
-#batch_size = 4
+num_workers = 4
+batch_size = 8
 visib_thresh = 0.2
 BBox_CropSize_image = 256
 BBox_CropSize_GT = 128

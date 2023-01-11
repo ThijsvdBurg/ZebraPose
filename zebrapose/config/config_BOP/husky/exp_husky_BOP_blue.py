@@ -13,7 +13,7 @@ training_data_folder_2 = 'none'
 val_folder = 'test'
 test_folder = 'test'
 second_dataset_ratio = 0.875
-num_workers = 2 #base_config.num_workers
+num_workers = base_config.num_workers
 train_obj_visible_threshold = base_config.visib_thresh
 ####
 
@@ -24,7 +24,7 @@ BoundingBox_CropSize_GT = base_config.BBox_CropSize_GT
 
 BinaryCode_Loss_Type = 'BCE'
 mask_binary_code_loss = True
-predict_entire_mask = False
+predict_entire_mask = True
 
 use_histgramm_weighted_binary_loss = True
 
@@ -39,8 +39,8 @@ use_progressive_x = False
 #### optimizer
 optimizer_type = 'Adam'
 learning_rate = 0.0002
-batch_size = 32 #base_config.batch_size
-total_iteration = 180001
+batch_size = base_config.batch_size
+total_iteration = 6000 #180001
 
 binary_loss_weight = 3
 ####
