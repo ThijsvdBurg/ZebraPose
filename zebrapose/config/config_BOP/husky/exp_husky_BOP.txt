@@ -4,9 +4,6 @@ bop_challange = False
 #bop_path = /home/pmvanderburg/noetic-husky/datasets/bop_datasets
 bop_path = /media/pmvanderburg/T7/bop_datasets
 dataset_name = husky
-training_data_folder = train
-training_data_folder_2 = None
-val_folder = test
 test_folder = test
 second_dataset_ratio = 0.875
 num_workers = 4
@@ -45,18 +42,18 @@ tensorboard_path=/media/pmvanderburg/T7/bop_datasets/6dof_pose_experiments/exper
 
 
 #### optimizer
-optimizer_type = Adam
-learning_rate = 0.0002
-batch_size = 8
-total_iteration = 380000
+### optimizer_type = Adam
+### learning_rate = 0.0002
+### total_iteration = 380000
 
-binary_loss_weight = 3
+### binary_loss_weight = 3
 #### 
 
 
 #### augmentations
-Detection_results = none
-#detection_results/tudl/inference_fcos_V57eSE_MSx1333_ColorAugAAEWeaker_8e_tudl_real_pbr.json
+#Detection_results = none
+Detection_results = detection_results/tudl/inference_fcos_V57eSE_MSx1333_ColorAugAAEWeaker_8e_tudl_real_pbr_o5.json
+detector = FCOS
 
 padding_ratio = 1.5
 resize_method = crop_square_resize  
