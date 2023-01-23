@@ -2,6 +2,8 @@ from distutils.command.config import config
 import os
 import sys
 
+import time
+
 sys.path.insert(0, os.getcwd())
 
 from config_parser import parse_cfg
@@ -16,6 +18,8 @@ from bop_dataset_pytorch import bop_dataset_single_obj_pytorch
 import torch
 import numpy as np
 import cv2
+
+import matplotlib.pyplot as plt
 
 from binary_code_helper.CNN_output_to_pose import load_dict_class_id_3D_points, CNN_outputs_to_object_pose
 #sys.path.append("../bop_toolkit")
@@ -33,7 +37,74 @@ from tools_for_BOP.common_dataset_info import get_obj_info
 
 from binary_code_helper.generate_new_dict import generate_new_corres_dict
 
-from tools_for_BOP import write_to_cvs 
+from tools_for_BOP import write_csv
+
+def visualise_tensor(tensor_gpu, ch=0, allkernels=False, nrows=8, ncols=8):
+    """
+    # 1. The function visualise_tensor() takes the following arguments:
+
+    # tensor_gpu: the tensor to be visualised
+    # ch: the channel to be visualised, if ch=0, all channels are visualised
+    # allkernels: if True, all kernels are visualised
+    # nrows: number of rows of subplots to be used
+    # ncols: number of columns of subplots to be used
+
+    """
+    #tensorcopy=tensor.copy()
+    tensor_cpu = tensor_gpu.detach().cpu()
+    # tensor=tensor_cpu.permute(1,0,2,3)
+    tensor=tensor_cpu.numpy()
+    print('tensor t type and shape', type(tensor),tensor.shape)
+    if allkernels: tensor = tensor.view((1,-1) + tensor.shape[-2:])
+    elif ch >= 0: tensor = tensor[:,ch,:,:]
+    elif ch < 0:
+        c = int(tensor.shape[1] / abs(ch))
+        row = int(c / nrows) if (c % nrows == 0) else int(c / nrows) + 1
+        col = min(ncols, c) if (c < ncols) else c % ncols
+        print('row={}, col={}'.format(row, col))     # debug only !!!
+
+    # print('tensor t type and shape', type(tensor),tensor.shape)
+    # for kernel in tensor:
+        # print(kernel)
+    kernels = np.array([kernel for kernel in tensor])
+    print('kernels.shape',kernels.shape)
+    fig = plt.figure()
+    row = col = 4
+    for i in range((row * col)):   # number of subplots to show all kernels/filters of a layer !!!
+
+        ax1 = fig.add_subplot(row, col , i+1 )   # add subplot to figure with index i+1 and size row x column !!!
+
+        ax1.imshow((kernels[i]).reshape((32 , 32)), cmap='gray')   # show image on subplot with index i+1 and size row x column !!!
+
+        ax1.axis('off')   # remove axis from the plot/subplot with index i+1 and size row x column !!!
+
+        ax1.set_xticklabels([])   # remove tick labels from the plot/subplot with index i+! and size row x column !!!
+
+        ax1.set_yticklabels([])   # remove tick labels from the plot/subplot with index i+! and size row x column !!!
+
+    plt.tight_layout()      ## adjust spacing between subplots to minimize the overlaps !!
+
+def visualise(pred_mask_prob, pred_code_prob):
+    #cv2.namedWindow('rgb', #cv2.WINDOW_NORMAL)
+    #cv2.namedWindow('mask', #cv2.WINDOW_NORMAL)
+    #cv2.namedWindow('entire_mask', #cv2.WINDOW_NORMAL)
+    #cv2.namedWindow('GT_img_visible', #cv2.WINDOW_NORMAL)
+    #cv2.namedWindow('GT_img_invisible', #cv2.WINDOW_NORMAL)
+    ### PMB DEBUG ###
+    print('pred_mask_prob',type(pred_mask_prob), pred_mask_prob.shape)
+    print('pred_code_prob',type(pred_code_prob), pred_code_prob.shape)
+    #################
+    #x_ = x.copy()
+    #if Bbox is not None:
+        #cv2.rectangle(x_,(Bbox[0],Bbox[1]),(Bbox[0]+Bbox[2] ,Bbox[1]+Bbox[3] ),(0,255,0),3)
+    #cv2.imshow('rgb',x_)
+    #cv2.imshow('mask',mask)
+    #cv2.imshow('entire_mask',entire_mask)
+
+    #cv2.imshow('GT_img_visible',GT_img_visible)
+    #cv2.imshow('GT_img_invisible',GT_img_invisible)
+
+    #cv2.waitKey(0)
 
 def VOCap(rec, prec):
     idx = np.where(rec != np.inf)
@@ -220,16 +291,22 @@ def main(configs):
     if test_gts[obj_id][0] == None:
         has_gt = False
 
+    ### PMB DEBUG ###
+    print('type of test_rgb_files[obj_id] to see what is rgb_fn in get_detection_results', type(test_rgb_files[obj_id]))
+    print('test_rgb_files[obj_id][0:3] to see what is rgb_fn in get_detection_results', test_rgb_files[obj_id])
+    #################
     if Detection_results != 'none':
         if configs['detector']=='FCOS':
-            from get_detection_results import get_detection_results, get_detection_scores
+            from get_detection_results_pmb_debug import get_detection_results, get_detection_scores
         elif configs['detector']=='MASKRCNN':
             from get_mask_rcnn_results import get_detection_results, get_detection_scores
         Det_Bbox = get_detection_results(Detection_results, test_rgb_files[obj_id], obj_id+1, 0)
         scores = get_detection_scores(Detection_results, test_rgb_files[obj_id], obj_id+1, 0)
     else:
         Det_Bbox = None
-
+    ### PMB DEBUG ###
+    print('Det_Bbox', Det_Bbox)
+    #################
     test_dataset = bop_dataset_single_obj_pytorch(
                                             dataset_dir_test, test_folder, test_rgb_files[obj_id], test_mask_files[obj_id], test_mask_visib_files[obj_id], 
                                             test_gts[obj_id], test_gt_infos[obj_id], camera_params_test[obj_id], False, 
@@ -308,7 +385,9 @@ def main(configs):
             class_code_images = class_code_images.cuda()
 
         pred_mask_prob, pred_code_prob = net(data)
-
+        # visualise(pred_mask_prob, pred_code_prob)
+        visualise_tensor(pred_code_prob,1, False)
+        time.sleep(10)
         pred_masks = from_output_to_class_mask(pred_mask_prob)
         pred_code_images = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_iteration, binary_code_length=binary_code_length)
        
@@ -388,11 +467,11 @@ def main(configs):
              
     if Det_Bbox == None:         
         scores = [1 for x in range(len(estimated_Rs))]
-    cvs_path = os.path.join(eval_output_path, 'pose_result_bop/')
-    if not os.path.exists(cvs_path):
-        os.makedirs(cvs_path)
+    csv_path = os.path.join(eval_output_path, 'pose_result_bop/')
+    if not os.path.exists(csv_path):
+        os.makedirs(csv_path)
 
-    write_to_cvs.write_cvs(cvs_path, "{}_{}".format(dataset_name, obj_name), obj_id+1, scene_ids, img_ids, estimated_Rs, estimated_Ts, scores)
+    write_to_csv.write_csv(csv_path, "{}_{}".format(dataset_name, obj_name), obj_id+1, scene_ids, img_ids, estimated_Rs, estimated_Ts, scores)
     
     ADX_passed = np.mean(ADX_passed)
     ADX_error_mean= np.mean(ADX_error)

@@ -3,7 +3,7 @@ import os
 
 #scene_id,im_id,obj_id,score,R,t,time
 
-def write_cvs(evaluation_result_path, filename, obj_id, scene_id_, img_id_, r_, t_, scores):
+def write_csv(evaluation_result_path, filename, obj_id, scene_id_, img_id_, r_, t_, scores):
     filename = os.path.join(evaluation_result_path, filename + '.csv')
     f = open(filename, "w")
     f.write("scene_id,im_id,obj_id,score,R,t,time\n")

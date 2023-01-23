@@ -32,7 +32,7 @@ from tools_for_BOP.common_dataset_info import get_obj_info
 
 from binary_code_helper.generate_new_dict import generate_new_corres_dict
 
-from tools_for_BOP import write_to_cvs 
+from tools_for_BOP import write_to_csv 
 
 def VOCap(rec, prec):
     idx = np.where(rec != np.inf)
@@ -340,11 +340,11 @@ def main(configs):
              
     if Det_Bbox == None:         
         scores = [1 for x in range(len(estimated_Rs))]
-    cvs_path = os.path.join(eval_output_path, 'pose_result_bop/')
-    if not os.path.exists(cvs_path):
-        os.makedirs(cvs_path)
+    csv_path = os.path.join(eval_output_path, 'pose_result_bop/')
+    if not os.path.exists(csv_path):
+        os.makedirs(csv_path)
 
-    write_to_cvs.write_cvs(cvs_path, "{}_{}".format(dataset_name, obj_name), obj_id+1, scene_ids, img_ids, estimated_Rs, estimated_Ts, scores)
+    write_to_csv.write_csv(csv_path, "{}_{}".format(dataset_name, obj_name), obj_id+1, scene_ids, img_ids, estimated_Rs, estimated_Ts, scores)
     
     ADX_passed = np.mean(ADX_passed)
     ADX_error_mean= np.mean(ADX_error)
