@@ -1,6 +1,7 @@
 from distutils.command.config import config
 import os
 import sys
+import time
 
 sys.path.insert(0, os.getcwd())
 
@@ -33,7 +34,7 @@ from tools_for_BOP.common_dataset_info import get_obj_info
 
 from binary_code_helper.generate_new_dict import generate_new_corres_dict
 
-from tools_for_BOP import write_to_cvs 
+from zebrapose.tools_for_BOP import write_to_csv 
 
 def main(configs):
     #### training dataset
@@ -84,7 +85,7 @@ def main(configs):
 
 
     # get dataset informations
-    dataset_dir,source_dir,model_plys,model_info,model_ids,rgb_files,depth_files,mask_files,mask_visib_files,gts,gt_infos,cam_param_global, cam_params = bop_io.get_dataset(bop_path,dataset_name, train=True, data_folder=training_data_folder, data_per_obj=True, incl_param=True, train_obj_visible_threshold=train_obj_visible_threshold)
+    dataset_dir,source_dir,model_plys,model_info,model_ids,rgb_files,depth_files,mask_files,mask_visib_files,gts,gt_infos,cam_param_global, cam_params = bop_io.get_dataset(bop_path,dataset_name, train=True, data_per_obj=True, incl_param=True, train_obj_visible_threshold=train_obj_visible_threshold)
     obj_name_obj_id, symmetry_obj = get_obj_info(dataset_name)
     obj_id = int(obj_name_obj_id[obj_name] - 1) # now the obj_id started from 0
     if obj_name in symmetry_obj:
@@ -120,15 +121,13 @@ def main(configs):
 
     # define test data loader
     if not bop_challange:
-        dataset_dir_test,_,_,_,_,test_rgb_files,test_depth_files,test_mask_files,test_mask_visib_files,test_gts,
-        test_gt_infos,_, camera_params_test = bop_io.get_dataset(
+        dataset_dir_test,_,_,_,_,test_rgb_files,test_depth_files,test_mask_files,test_mask_visib_files,test_gts,test_gt_infos,_,camera_params_test = bop_io.get_dataset(
             bop_path, dataset_name,train=False, data_folder=test_folder, data_per_obj=True, incl_param=True, 
             train_obj_visible_threshold=train_obj_visible_threshold
             )
     else:
         print("use BOP test images")
-        dataset_dir_test,_,_,_,_,test_rgb_files,test_depth_files,test_mask_files,test_mask_visib_files,test_gts,
-        test_gt_infos,_, camera_params_test = bop_io.get_bop_challange_test_data(
+        dataset_dir_test,_,_,_,_,test_rgb_files,test_depth_files,test_mask_files,test_mask_visib_files,test_gts,test_gt_infos,_,camera_params_test = bop_io.get_bop_challange_test_data(
             bop_path, dataset_name, target_obj_id=obj_id+1, data_folder=test_folder
             )
 
@@ -208,14 +207,53 @@ def main(configs):
     #     test_img = cv2.imread(test_rgb_files[obj_id][0])
     #     icp_refiner = ICPRefiner(mesh_path, test_img.shape[1], test_img.shape[0], num_iters=100)
 
+    ### GPU warm up as described by https://towardsdatascience.com/the-correct-way-to-measure-inference-time-of-deep-neural-networks-304a54e5187f
+    # device = torch.device(“cuda”)
+    dummy_input = torch.randn(1, 3,256,256,dtype=torch.float).cuda()
+    #GPU-WARM-UP
+    # for _ in range(10):
+    #     _ = net(dummy_input)
+    starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+    repetitions = 300
+    timings=np.zeros((repetitions,1))
+    
+    # with torch.no_grad():    
+    #     for rep in range(repetitions):
+    #         starter.record()
+    #         _ = net(dummy_input)
+    #         ender.record()
+    #         # WAIT FOR GPU SYNC
+    #         torch.cuda.synchronize()
+    #         curr_time = starter.elapsed_time(ender)
+    #         timings[rep] = curr_time
+    # mean_syn = np.sum(timings) / repetitions
+    # std_syn = np.std(timings)
+    # print('mean_syn',mean_syn)
+    # print('std',std_syn)
+    
+    timings=np.zeros((repetitions,1))
     for batch_idx, (data, entire_masks, masks, Rs, ts, Bboxes, class_code_images, cam_Ks) in enumerate(tqdm(test_loader)):
+        starter.record()
+        
         if torch.cuda.is_available():
             data=data.cuda()
             masks = masks.cuda()
             class_code_images = class_code_images.cuda()
 
+        # print('data shape',data.shape)
+        if batch_idx==repetitions:
+            break
+        
+        # Get CNN output
         pred_mask_prob, pred_code_prob = net(data)
 
+        print('pred_mask_prob shape',pred_mask_prob.shape)
+        print('pred_code_prob shape',pred_code_prob.shape)
+
+        visualization.visualise_tensor(pred_code_prob, num_ch=16,batch_id=batch_idx,eval_output_path=eval_output_path)
+        visualization.visualise_tensor(pred_mask_prob, num_ch=1, batch_id=batch_idx,eval_output_path=eval_output_path)
+        # time.sleep(1)
+        
         pred_masks = from_output_to_class_mask(pred_mask_prob)
         pred_code_images = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_iteration, binary_code_length=binary_code_length)
        
@@ -234,11 +272,11 @@ def main(configs):
         for counter, (r_GT, t_GT, Bbox, cam_K) in enumerate(zip(Rs, ts, Bboxes, cam_Ks)):
             if ignore_bit!=0:
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_code_images[counter][:,:,:-ignore_bit],
-                                                                            Bbox, BoundingBox_CropSize_GT, ProgX, divide_number_each_iteration, new_dict_class_id_3D_points, 
+                                                                            Bbox, BoundingBox_CropSize_GT, ProgX, divide_number_each_iteration, new_dict_class_id_3D_points,
                                                                             intrinsic_matrix=cam_K)
             else:
-                R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_code_images[counter], 
-                                                                            Bbox, BoundingBox_CropSize_GT, ProgX, divide_number_each_iteration, dict_class_id_3D_points, 
+                R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_code_images[counter],
+                                                                            Bbox, BoundingBox_CropSize_GT, ProgX, divide_number_each_iteration, dict_class_id_3D_points,
                                                                             intrinsic_matrix=cam_K)
         
             if success:
@@ -263,36 +301,18 @@ def main(configs):
                 R_[2,2] = 1
                 estimated_Rs.append(R_)
                 estimated_Ts.append(np.zeros((3,1)))
-
+        ender.record()
+        # WAIT FOR GPU SYNC
+        torch.cuda.synchronize()
+        curr_time = starter.elapsed_time(ender)
+        timings[batch_idx] = curr_time
+        
             # adx_error = 10000
             # if success and has_gt:
                 # adx_error = Calculate_Pose_Error_Main(r_GT, t_GT, R_predict, t_predict, vertices)
                 # if np.isnan(adx_error):
                     # adx_error = 10000
-            
-    #         if adx_error < obj_diameter * diameter_threshold:
-    #             ADX_passed[batch_idx] = 1
-
-    #         ADX_error[batch_idx] = adx_error
-                        
-    #         AUC_ADX_passed = calc_AUC(adx_error, diameter_threshold, obj_diameter, auc_resolution, batch_idx, AUC_ADX_passed,num_th)
-            
-    #         if calc_add_and_adi:
-    #             ady_error = 10000
-    #             if success and has_gt:
-    #                 ady_error = Calculate_Pose_Error_Supp(r_GT, t_GT, R_predict, t_predict, vertices)
-    #                 if np.isnan(ady_error):
-    #                     ady_error = 10000
-    #             if ady_error < obj_diameter*diameter_threshold:
-    #                 ADY_passed[batch_idx] = 1
-    #             ADY_error[batch_idx] = ady_error
-               
-    #             th = np.linspace(10, 100, num=10)
-    #             sum_correct = 0
-    #             for t in th:
-    #                 if ady_error < t:
-    #                     sum_correct = sum_correct + 1
-    #             AUC_ADY_error[batch_idx] = sum_correct/10
+    print('mean of timing',np.mean(timings))
              
     if Det_Bbox == None:         
         scores = [1 for x in range(len(estimated_Rs))]
@@ -300,117 +320,8 @@ def main(configs):
     if not os.path.exists(cvs_path):
         os.makedirs(cvs_path)
 
-    write_to_cvs.write_cvs(cvs_path, "{}_{}".format(dataset_name, obj_name), obj_id+1, scene_ids, img_ids, estimated_Rs, estimated_Ts, scores)
+    write_to_csv.write_csv(cvs_path, "{}_{}".format(dataset_name, obj_name), obj_id+1, scene_ids, img_ids, estimated_Rs, estimated_Ts, scores)
     
-    # ADX_passed = np.mean(ADX_passed)
-    # ADX_error_mean= np.mean(ADX_error)
-    # print('{}/{}_mean'.format(main_metric_name,main_metric_name), ADX_error_mean,'mm')
-    # AUC_ADX_error1 = np.mean(AUC_ADX_error1)
-    print('{}/{}'.format(main_metric_name,main_metric_name), ADX_passed)
-    # print('erroneous AUC_1_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error1)
-    # AUC_ADX_error2 = np.mean(AUC_ADX_error2)
-    # print('{}/{}'.format(main_metric_name,main_metric_name), ADX_passed2)
-    # print('Correct AUC_2_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error2)
-    
-    ### correct AUC calculation ###
-    # AUC_ADX_passed[batch_idx][AUC_idx]
-    # AUC_cumulative = np.zeros((num_th,auc_resolution))
-    # AUC_ADX = np.zeros(num_th)
-    
-    # for i,th_grid in enumerate(AUC_ADX_passed):
-    #     for j, passed in enumerate(th_grid):
-    #         AUC_cumulative[i,j] = np.mean(th_grid[j])
-
-    ### visualize AUC graph ###
-    # visualization.AUC_graph(AUC_cumulative, auc_resolution, diameter_threshold)
-
-    # for i in range(0,num_th):
-    #     AUC_ADX[i] = np.mean(AUC_ADX_passed[i])
-    # print('{}/{}_10%'.format(main_metric_name,main_metric_name), AUC_cumulative[0,9])
-    # print('{}/{}_5%'.format(main_metric_name,main_metric_name), AUC_cumulative[1,9])
-    # print('{}/{}_2.5%'.format(main_metric_name,main_metric_name), AUC_cumulative[2,9])
-    # print('AUC_10%_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX[0])
-    # print('AUC_5%_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX[1])
-    # print('AUC_2.5%_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX[2])
-    # print('Cumulative AUC_10%{}/{}'.format(main_metric_name,main_metric_name), AUC_cumulative[0])
-    # print('Cumulative AUC_5%{}/{}'.format(main_metric_name,main_metric_name), AUC_cumulative[1])
-    # print('Cumulative AUC_2.5%{}/{}'.format(main_metric_name,main_metric_name), AUC_cumulative[2])
-    #AUC_ADX_error_posecnn = compute_auc_posecnn(ADX_error/1000.)
-    #print('AUC_posecnn_{}/{}'.format(main_metric_name,main_metric_name), AUC_ADX_error_posecnn)
-
-    # if calc_add_and_adi:
-    #     ADY_passed = np.mean(ADY_passed)
-    #     ADY_error_mean= np.mean(ADY_error)
-    #     AUC_ADY_error = np.mean(AUC_ADY_error)
-    #     print('{}/{}'.format(supp_metric_name,supp_metric_name), ADY_passed)
-    #     print('AUC_{}/{}'.format(supp_metric_name,supp_metric_name), AUC_ADY_error)
-    #     AUC_ADY_error_posecnn = compute_auc_posecnn(ADY_error/1000.)
-    #     print('AUC_posecnn_{}/{}'.format(supp_metric_name,supp_metric_name), AUC_ADY_error_posecnn)
-
-    ####save results to file
-    # if has_gt:
-    #     path = os.path.join(eval_output_path, "ADD_result/")
-    #     if not os.path.exists(path):
-    #         os.makedirs(path)
-    #     path1 = path + "{}_{}".format(dataset_name, obj_name) + ".txt" 
-    #     path_AUC = path + "{}_{}_{}".format(dataset_name, obj_name,diameter_threshold) + "_AUC.npy" 
-    #     #path = path + dataset_name + obj_name  + "ignorebit_" + str(configs['ignore_bit']) + ".txt"
-    #     #path = path + dataset_name + obj_name + "radix" + "_" + str(divide_number_each_iteration)+"_"+str(number_of_iterations) + ".txt"
-    #     print('save ADD results to', path1)
-    #     print(path1)
-    #     f = open(path1, "w")
-    #     #auc = open(path_AUC, "w")
-    #     ### ADD ###
-    #     f.write('{}/{}_10% '.format(main_metric_name,main_metric_name))
-    #     f.write(str(ADX_passed.item()))
-    #     f.write('\n')
-    #     ### ADD ###
-    #     f.write('{}/{}_10% '.format(main_metric_name,main_metric_name))
-    #     f.write(str(AUC_cumulative[0,9].item()))
-    #     f.write('\n')
-    #     ### ADD ###
-    #     f.write('{}/{}_5% '.format(main_metric_name,main_metric_name))
-    #     f.write(str(AUC_cumulative[1,9].item()))
-    #     f.write('\n')
-    #     ### ADD ###
-    #     f.write('{}/{}_2.5% '.format(main_metric_name,main_metric_name))
-    #     f.write(str(AUC_cumulative[2,9].item()))
-    #     f.write('\n')
-    #     ### correct AUC ADD ###
-    #     #f.write('AUC_10%_{}/{} '.format(main_metric_name,main_metric_name))
-    #     #f.write(str(AUC_ADX_error2.item()))
-    #     #f.write('\n')
-    #     ### Cumulative AUC ADD ###
-    #     f.write('Cumulative AUC_{}/{}_10% '.format(main_metric_name,main_metric_name))
-    #     f.write(str(AUC_cumulative[0])) #.item()))
-    #     f.write('\n')
-    #     f.write('Cumulative AUC_{}/{}_5% '.format(main_metric_name,main_metric_name))
-    #     f.write(str(AUC_cumulative[1])) #.item()))
-    #     f.write('\n')
-    #     f.write('Cumulative AUC_{}/{}_2.5% '.format(main_metric_name,main_metric_name))
-    #     f.write(str(AUC_cumulative[2])) #.item()))
-    #     f.write('\n')
-    #     np.save(path_AUC,AUC_cumulative)
-    #     ### AUC ADD ###
-    #     #f.write('Erroneous AUC_{}/{} '.format(main_metric_name,main_metric_name))
-    #     #f.write(str(AUC_ADX_error1.item()))
-    #     #f.write('\n')
-    #     ### posecnn AUC ###
-    #     #f.write('Erroneous AUC_posecnn_{}/{} '.format(main_metric_name,main_metric_name))
-    #     #f.write(str(AUC_ADX_error_posecnn.item()))
-    #     #f.write('\n')
-    #     ### AUC ADI ###
-    #     #f.write('AUC_{}/{} '.format(supp_metric_name,supp_metric_name))
-    #     #f.write(str(AUC_ADY_error.item()))
-    #     #f.write('\n')
-    #     ### AUC posecnn ADI
-    #     #f.write('AUC_posecnn_{}/{} '.format(main_metric_name,main_metric_name))
-    #     #f.write(str(AUC_ADY_error_posecnn.item()))
-    #     #f.write('\n')
-    #     ####
-    #     f.close()
-    #     ####
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='BinaryCodeNet')
     parser.add_argument('--cfg', type=str) # config file
