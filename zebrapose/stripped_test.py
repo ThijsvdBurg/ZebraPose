@@ -34,7 +34,7 @@ from tools_for_BOP.common_dataset_info import get_obj_info
 
 from binary_code_helper.generate_new_dict import generate_new_corres_dict
 
-from zebrapose.tools_for_BOP import write_to_csv 
+from tools_for_BOP import write_to_csv 
 
 def main(configs):
     #### training dataset
@@ -247,28 +247,36 @@ def main(configs):
         # Get CNN output
         pred_mask_prob, pred_code_prob = net(data)
 
-        print('pred_mask_prob shape',pred_mask_prob.shape)
-        print('pred_code_prob shape',pred_code_prob.shape)
+        # print('pred_mask_prob shape',pred_mask_prob.shape) # (1, 16, 128, 128)
+        # print('pred_code_prob shape',pred_code_prob.shape) # (1, 1, 128, 128)
 
-        visualization.visualise_tensor(pred_code_prob, num_ch=16,batch_id=batch_idx,eval_output_path=eval_output_path)
-        visualization.visualise_tensor(pred_mask_prob, num_ch=1, batch_id=batch_idx,eval_output_path=eval_output_path)
+        visualization.visualise_tensor(pred_code_prob, 'pred_code_prob from net(data)', num_ch=16,batch_id=batch_idx,eval_output_path=eval_output_path)
+        visualization.visualise_tensor(pred_mask_prob, 'pred_mask_prob from net(data)', num_ch=1, batch_id=batch_idx,eval_output_path=eval_output_path)
         # time.sleep(1)
         
         pred_masks = from_output_to_class_mask(pred_mask_prob)
+        # print('pred_masks shape',pred_masks.shape) # (1, 1, 128, 128)
         pred_code_images = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_iteration, binary_code_length=binary_code_length)
-       
+        print('pred_code_images shape',pred_code_images.shape) # (1, 16, 128, 128)
+        visualization.visualise_tensor(pred_code_images.transpose(1,2,3,0), 'pred_code_images from_output_to_class_binary_code(pred_code_prob', 16, batch_idx, eval_output_path)
         # from binary code to pose
-        pred_code_images = pred_code_images.transpose(0, 2, 3, 1)
+        pred_code_images = pred_code_images.transpose(0, 2, 3, 1) # (1, 128, 128, 16)
+        
 
         pred_masks = pred_masks.transpose(0, 2, 3, 1)
+        # print('pred_masks shape after transpose(0, 2, 3, 1)',pred_masks.shape) # (1, 128, 128, 1)
         pred_masks = pred_masks.squeeze(axis=-1).astype('uint8')
+        # print('pred_masks shape after squeeze(axis=-1).astype(uint8)',pred_masks.shape) # (1, 128, 128) the last one was removed
+        visualization.visualise_tensor(pred_masks, 'pred_masks=from_output_to_class_mask(pred_mask_prob)', 1, batch_idx, eval_output_path)
 
         Rs = Rs.detach().cpu().numpy()
         ts = ts.detach().cpu().numpy()
         Bboxes = Bboxes.detach().cpu().numpy()
-
+        visualization.visualise_tensor(class_code_images, 'class_code_images from test_loader', 16,batch_idx,eval_output_path)
         class_code_images = class_code_images.detach().cpu().numpy().transpose(0, 2, 3, 1).squeeze(axis=0).astype('uint8')
+        # print('class_code_images shape after transpose(0, 2, 3, 1).squeeze(axis=0)',class_code_images.shape) # (128, 128, 16)
         
+
         for counter, (r_GT, t_GT, Bbox, cam_K) in enumerate(zip(Rs, ts, Bboxes, cam_Ks)):
             if ignore_bit!=0:
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_code_images[counter][:,:,:-ignore_bit],

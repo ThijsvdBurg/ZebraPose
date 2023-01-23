@@ -51,9 +51,9 @@ tensorboard_path=/media/pmvanderburg/T7/bop_datasets/6dof_pose_experiments/exper
 
 
 #### augmentations
-#Detection_results = none
-Detection_results = detection_results/tudl/inference_fcos_V57eSE_MSx1333_ColorAugAAEWeaker_8e_tudl_real_pbr_o5.json
-detector = FCOS
+Detection_results = none
+#Detection_results = detection_results/tudl/inference_fcos_V57eSE_MSx1333_ColorAugAAEWeaker_8e_tudl_real_pbr_o5.json
+#detector = FCOS
 
 padding_ratio = 1.5
 resize_method = crop_square_resize  
