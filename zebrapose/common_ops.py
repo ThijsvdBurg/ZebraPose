@@ -3,21 +3,21 @@ import torch
 import cv2
 
 
-def from_output_to_class_mask(pred_mask_prob, thershold=0.5):
+def from_output_to_class_mask(pred_mask_prob, threshold=0.5):
     activation_function = torch.nn.Sigmoid()
     pred_mask_prob = activation_function(pred_mask_prob)
     pred_mask_prob = pred_mask_prob.detach().cpu().numpy()
     pred_mask = np.zeros(pred_mask_prob.shape)
-    pred_mask[pred_mask_prob>thershold] = 1.
+    pred_mask[pred_mask_prob>threshold] = 1.
     return pred_mask
 
-def from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, thershold=0.5, divided_num_each_interation=2, binary_code_length=16):
+def from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, threshold=0.5, divided_num_each_interation=2, binary_code_length=16):
     if BinaryCode_Loss_Type == "BCE" or BinaryCode_Loss_Type == "L1":   
         activation_function = torch.nn.Sigmoid()
         pred_code_prob = activation_function(pred_code_prob)
         pred_code_prob = pred_code_prob.detach().cpu().numpy()
         pred_code = np.zeros(pred_code_prob.shape)
-        pred_code[pred_code_prob>thershold] = 1.
+        pred_code[pred_code_prob>threshold] = 1.
 
     elif BinaryCode_Loss_Type == "CE":   
         activation_function = torch.nn.Softmax(dim=1)

@@ -68,9 +68,9 @@ def get_bop_challange_test_data(bop_dir, dataset, target_obj_id, data_folder='te
             gts = scene_gts[im_id]
             for counter, gt in enumerate(gts):
                 if int(gt['obj_id']) == target_obj_id:
-                    visib_thershold = 0.1
+                    visib_threshold = 0.1
                     visib_fract = scene_gt_infos[im_id][counter]['visib_fract']
-                    if visib_fract > visib_thershold:
+                    if visib_fract > visib_threshold:
                         if(dataset=="itodd"):
                             rgb_fn = os.path.join(bop_dataset_dir, data_folder, "{:06d}".format(scene_id), "gray","{:06d}.tif".format(im_id))
                         else:
@@ -198,13 +198,13 @@ def get_dataset(bop_dir,dataset,train=True,incl_param=False ,eval_model=False, d
                         rgb_fn = rgb_fn_no_surfix + ".jpg"
                             
                     if data_per_obj:
-                        visib_thershold = 0.1
+                        visib_threshold = 0.1
                         if train:
-                            visib_thershold = train_obj_visible_threshold
+                            visib_threshold = train_obj_visible_threshold
                         gts = scene_gts[im_id]
                         for counter, gt in enumerate(gts):
                             visib_fract = scene_gt_infos[im_id][counter]['visib_fract']
-                            if visib_fract > visib_thershold:
+                            if visib_fract > visib_threshold:
                                 obj_id = int(gt['obj_id']-1)
                                 mask_fn = os.path.join(current_dir+"/mask","{:06d}_{:06d}.png".format(im_id, counter))
                                 
