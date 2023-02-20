@@ -147,10 +147,18 @@ def main(configs):
     print("test image example:", test_rgb_files[obj_id][0], flush=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=num_workers)
 
-    binary_code_length = number_of_iterations
-    print("predicted binary_code_length", binary_code_length)
-    configs['binary_code_length'] = binary_code_length
+    # binary_code_length = number_of_iterations
+    # print("predicted binary_code_length", binary_code_length)
+    # configs['binary_code_length'] = binary_code_length
  
+    resnet_layer = 34
+    binary_code_length = 16
+    concat = True
+    divide_number_each_iteration = 2
+    output_kernel_size = 1
+    efficientnet_key = None
+    checkpoint_file='/media/pmvanderburg/T7/bop_datasets/6dof_pose_experiments/experiments/checkpoints/exp_husky_BOP_4xWorkers_8xBatch__1xGPUx32G_1xTasks_8xBatchTest_EntireMaskobj07/best_score/0_9850step4000'
+        
     net = BinaryCodeNet_Deeplab(
                 num_resnet_layers=resnet_layer, 
                 concat=concat, 
@@ -163,7 +171,9 @@ def main(configs):
     if torch.cuda.is_available():
         net=net.cuda()
 
-    checkpoint = torch.load( configs['checkpoint_file'] )
+    # checkpoint = torch.load( configs['checkpoint_file'] )
+    checkpoint = torch.load( checkpoint_file )
+    
     net.load_state_dict(checkpoint['model_state_dict'])
 
     net.eval()

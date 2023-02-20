@@ -308,11 +308,11 @@ def main(configs):
     print('Det_Bbox', Det_Bbox)
     #################
     test_dataset = bop_dataset_single_obj_pytorch(
-                                            dataset_dir_test, test_folder, test_rgb_files[obj_id], test_mask_files[obj_id], test_mask_visib_files[obj_id], 
-                                            test_gts[obj_id], test_gt_infos[obj_id], camera_params_test[obj_id], False, 
-                                            BoundingBox_CropSize_image, BoundingBox_CropSize_GT, GT_code_infos, 
-                                            padding_ratio=padding_ratio, resize_method=resize_method, Detect_Bbox=Det_Bbox,
-                                            use_peper_salt=use_peper_salt, use_motion_blur=use_motion_blur
+        dataset_dir_test, test_folder, test_rgb_files[obj_id], test_mask_files[obj_id], test_mask_visib_files[obj_id], 
+        test_gts[obj_id], test_gt_infos[obj_id], camera_params_test[obj_id], False, 
+        BoundingBox_CropSize_image, BoundingBox_CropSize_GT, GT_code_infos, 
+        padding_ratio=padding_ratio, resize_method=resize_method, Detect_Bbox=Det_Bbox,
+        use_peper_salt=use_peper_salt, use_motion_blur=use_motion_blur
                                         )
     print("test image example:", test_rgb_files[obj_id][0], flush=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=num_workers)
@@ -379,7 +379,6 @@ def main(configs):
         icp_refiner = ICPRefiner(mesh_path, test_img.shape[1], test_img.shape[0], num_iters=100)
 
     for batch_idx, (data, entire_masks, masks, Rs, ts, Bboxes, class_code_images, cam_Ks) in enumerate(tqdm(test_loader)):
-        print('data torch size',data.size())
         if torch.cuda.is_available():
             data=data.cuda()
             masks = masks.cuda()
