@@ -2,6 +2,8 @@ import math
 import numpy as np
 import torch 
 
+from bop_toolkit_lib import visualization
+
 
 def RGB_image_to_class_id_image(RGB_image):
     # RGB_image was saved as BGR in opencv
@@ -15,6 +17,8 @@ def RGB_image_to_class_id_image(RGB_image):
     return class_id_image
 
 def class_code_images_to_class_id_image(class_code_images, class_base=2):
+
+
     """
         class_code_images: numpy array HWC
     """
@@ -22,8 +26,21 @@ def class_code_images_to_class_id_image(class_code_images, class_base=2):
     class_id_image = np.zeros((class_code_images.shape[0], class_code_images.shape[1]))
 
     codes_length = class_code_images.shape[2]
+    # print('codes_length',codes_length)
     for i in range(codes_length):
-        class_id_image =  class_id_image + class_code_images[:,:,i] * (class_base**(codes_length - 1 - i))
+
+        # print('class_code_images[:,:,',i,'].shape',class_code_images[:,:,i].shape)
+        # print('class_code_images[:,:,',i,'] max',np.max(class_code_images[:,:,i]))
+        # print('class_code_images[:,:,',i,'] min',np.min(class_code_images[:,:,i]))
+        class_id = class_base**(codes_length - 1 - i)
+        # print('class_id and macht',class_id,codes_length - 1 - i)
+        # print('class_id',type(class_id))
+        print('class_id',class_id)
+        class_layer = class_code_images[:,:,i] * class_id
+        # visualization.visualise_tensor(class_layer, 'class_layer', 0, i, '/home/pmvanderburg/6dof_pose_experiments/exp_husky_BOP_4xWorkers_8xBatch__1xGPUx32G_1xTasks_8xBatchTest_EntireMaskobj07_20230124_test_debug')
+        class_id_image =  class_id_image + class_layer #class_id_image + class_code_images[:,:,i] * class_id
+        # visualization.visualise_tensor(class_id_image, 'class_id_image_layer', 0, i, '/home/pmvanderburg/6dof_pose_experiments/exp_husky_BOP_4xWorkers_8xBatch__1xGPUx32G_1xTasks_8xBatchTest_EntireMaskobj07_20230124_test_debug')
+        
 
     return class_id_image
 

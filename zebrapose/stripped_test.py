@@ -210,17 +210,32 @@ def main(configs):
     ### GPU warm up as described by https://towardsdatascience.com/the-correct-way-to-measure-inference-time-of-deep-neural-networks-304a54e5187f
     # device = torch.device(“cuda”)
     dummy_input = torch.randn(1, 3,256,256,dtype=torch.float).cuda()
-    #GPU-WARM-UP
-    # for _ in range(10):
-    #     _ = net(dummy_input)
+    # GPU-WARM-UP
+    for _ in range(10):
+        _ = net(dummy_input)
     starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-    repetitions = 300
+    repetitions = 30
     timings=np.zeros((repetitions,1))
     
     # with torch.no_grad():    
     #     for rep in range(repetitions):
+    #         # starter.record()
+    #         pred_mask_prob, pred_code_prob = net(dummy_input)
     #         starter.record()
-    #         _ = net(dummy_input)
+    #         pred_masks = from_output_to_class_mask(pred_mask_prob)
+    #         # print('pred_masks shape',pred_masks.shape) # (1, 1, 128, 128)
+    #         pred_code_images = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_iteration, binary_code_length=binary_code_length)
+        
+    #         # print('pred_code_images shape',pred_code_images.shape) # (1, 16, 128, 128)
+    #         # from binary code to pose
+    #         pred_code_images = pred_code_images.transpose(0, 2, 3, 1) # (1, 128, 128, 16)
+        
+
+    #         pred_masks = pred_masks.transpose(0, 2, 3, 1)
+    #         # print('pred_masks shape after transpose(0, 2, 3, 1)',pred_masks.shape) # (1, 128, 128, 1)
+    #         pred_masks = pred_masks.squeeze(axis=-1).astype('uint8')
+    #         # print('pred_masks shape after squeeze(axis=-1).astype(uint8)',pred_masks.shape) # (1, 128, 128) the last one was removed
+        
     #         ender.record()
     #         # WAIT FOR GPU SYNC
     #         torch.cuda.synchronize()
@@ -228,7 +243,7 @@ def main(configs):
     #         timings[rep] = curr_time
     # mean_syn = np.sum(timings) / repetitions
     # std_syn = np.std(timings)
-    # print('mean_syn',mean_syn)
+    # print('mean_syn prob to pred',mean_syn)
     # print('std',std_syn)
     
     timings=np.zeros((repetitions,1))
@@ -243,22 +258,20 @@ def main(configs):
         # print('data shape',data.shape)
         if batch_idx==repetitions:
             break
-        
         # Get CNN output
         pred_mask_prob, pred_code_prob = net(data)
-
+        
         # print('pred_mask_prob shape',pred_mask_prob.shape) # (1, 16, 128, 128)
         # print('pred_code_prob shape',pred_code_prob.shape) # (1, 1, 128, 128)
-
-        visualization.visualise_tensor(pred_code_prob, 'pred_code_prob from net(data)', num_ch=16,batch_id=batch_idx,eval_output_path=eval_output_path)
-        visualization.visualise_tensor(pred_mask_prob, 'pred_mask_prob from net(data)', num_ch=1, batch_id=batch_idx,eval_output_path=eval_output_path)
-        # time.sleep(1)
+        # print('data shape',data.shape) # (1, 3, 256,256)
+        
+        # starter.record()
         
         pred_masks = from_output_to_class_mask(pred_mask_prob)
         # print('pred_masks shape',pred_masks.shape) # (1, 1, 128, 128)
         pred_code_images = from_output_to_class_binary_code(pred_code_prob, BinaryCode_Loss_Type, divided_num_each_interation=divide_number_each_iteration, binary_code_length=binary_code_length)
-        print('pred_code_images shape',pred_code_images.shape) # (1, 16, 128, 128)
-        visualization.visualise_tensor(pred_code_images.transpose(1,2,3,0), 'pred_code_images from_output_to_class_binary_code(pred_code_prob', 16, batch_idx, eval_output_path)
+        
+        # print('pred_code_images shape',pred_code_images.shape) # (1, 16, 128, 128)
         # from binary code to pose
         pred_code_images = pred_code_images.transpose(0, 2, 3, 1) # (1, 128, 128, 16)
         
@@ -267,26 +280,36 @@ def main(configs):
         # print('pred_masks shape after transpose(0, 2, 3, 1)',pred_masks.shape) # (1, 128, 128, 1)
         pred_masks = pred_masks.squeeze(axis=-1).astype('uint8')
         # print('pred_masks shape after squeeze(axis=-1).astype(uint8)',pred_masks.shape) # (1, 128, 128) the last one was removed
-        visualization.visualise_tensor(pred_masks, 'pred_masks=from_output_to_class_mask(pred_mask_prob)', 1, batch_idx, eval_output_path)
-
+        
         Rs = Rs.detach().cpu().numpy()
         ts = ts.detach().cpu().numpy()
         Bboxes = Bboxes.detach().cpu().numpy()
-        visualization.visualise_tensor(class_code_images, 'class_code_images from test_loader', 16,batch_idx,eval_output_path)
         class_code_images = class_code_images.detach().cpu().numpy().transpose(0, 2, 3, 1).squeeze(axis=0).astype('uint8')
         # print('class_code_images shape after transpose(0, 2, 3, 1).squeeze(axis=0)',class_code_images.shape) # (128, 128, 16)
         
-
+        # Visualisations
+        visualization.visualise_tensor(data, 'data', num_ch=1,batch_id=batch_idx,eval_output_path=eval_output_path)
+        visualization.visualise_tensor(pred_code_prob, 'pred_code_prob from net(data)', num_ch=16,batch_id=batch_idx,eval_output_path=eval_output_path)
+        visualization.visualise_tensor(pred_mask_prob, 'pred_mask_prob from net(data)', num_ch=1, batch_id=batch_idx,eval_output_path=eval_output_path)
+        # visualization.visualise_tensor(pred_masks, 'pred_masks=from_output_to_class_mask(pred_mask_prob)', 1, batch_idx, eval_output_path)
+        # visualization.visualise_tensor(class_code_images, 'class_code_images from test_loader', 16,batch_idx,eval_output_path)
+        # visualization.visualise_tensor(pred_code_images.transpose(1,2,3,0), 'pred_code_images from_output_to_class_binary_code(pred_code_prob', 16, batch_idx, eval_output_path)
+        
+        # time.sleep(1)
+        # ender.record()
+        # starter.record()
         for counter, (r_GT, t_GT, Bbox, cam_K) in enumerate(zip(Rs, ts, Bboxes, cam_Ks)):
+            # print('pred_code_images[',counter,'].shape',pred_code_images[counter].shape) # (128, 128, 16) counter is 1 since batch_size=1
             if ignore_bit!=0:
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_code_images[counter][:,:,:-ignore_bit],
                                                                             Bbox, BoundingBox_CropSize_GT, ProgX, divide_number_each_iteration, new_dict_class_id_3D_points,
                                                                             intrinsic_matrix=cam_K)
-            else:
+            else:   
                 R_predict, t_predict, success = CNN_outputs_to_object_pose(pred_masks[counter], pred_code_images[counter],
                                                                             Bbox, BoundingBox_CropSize_GT, ProgX, divide_number_each_iteration, dict_class_id_3D_points,
                                                                             intrinsic_matrix=cam_K)
-        
+                # visualization.visualise_tensor(class_id_image, 'class_id_image from class_corresp', 0, batch_idx, eval_output_path)
+            
             if success:
                 # if configs['use_icp']:
                     # add icp refinement and replace R_predict, t_predict
@@ -332,23 +355,32 @@ def main(configs):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='BinaryCodeNet')
-    parser.add_argument('--cfg', type=str) # config file
-    parser.add_argument('--obj_name', type=str)
-    parser.add_argument('--ckpt_file', type=str)
-    parser.add_argument('--ignore_bit', type=str)
-    parser.add_argument('--eval_output_path', type=str)
+    # parser.add_argument('--cfg', type=str) # config file
+    # parser.add_argument('--obj_name', type=str)
+    # parser.add_argument('--ckpt_file', type=str)
+    # parser.add_argument('--ignore_bit', type=str)
+    # parser.add_argument('--eval_output_path', type=str)
     parser.add_argument('--use_icp', type=str, choices=('True','False'), default='False') # config file
     args = parser.parse_args()
-    config_file = args.cfg
-    checkpoint_file = args.ckpt_file
-    eval_output_path = args.eval_output_path
-    #eval_output_path = /media/pmvanderburg/T7/bop_datasets # args.eval_output_path
+    # config_file = args.cfg
+    # checkpoint_file = args.ckpt_file
+    # eval_output_path = args.eval_output_path
+    # #eval_output_path = /media/pmvanderburg/T7/bop_datasets # args.eval_output_path
+    # obj_name = args.obj_name
+    args.obj_name = 'obj07'
+    args.ignore_bit = 0 
     obj_name = args.obj_name
+    
+    config_file = '/home/pmvanderburg/ZebraPose/zebrapose/config/config_BOP/husky/exp_husky_BOP.txt'
+    
     configs = parse_cfg(config_file)
 
-    configs['use_icp'] = (args.use_icp == 'True')
+    # checkpoint_file = '/media/pmvanderburg/T7/bop_datasets/6dof_pose_experiments/experiments/checkpoints/exp_husky_BOP_4xWorkers_8xBatch__1xGPUx32G_1xTasks_8xBatchTest_EntireMaskobj07/best_score/0_9850step4000'
+    checkpoint_file = '/media/pmvanderburg/T7/bop_datasets/6dof_pose_experiments/experiments/checkpoints/exp_husky_BOP_4xWorkers_8xBatch__1xGPUx32G_1xTasks_8xBatchTest_EntireMaskobj07/best_score/0_9850step4000'
+    eval_output_path = '/home/pmvanderburg/6dof_pose_experiments/20230220_test_debug' # args.eval_output_path
+    
+    configs['use_icp'] = False # (args.use_icp == 'True')
     configs['obj_name'] = obj_name
-
 
     if configs['Detection_results'] != 'none':
         Detection_results = configs['Detection_results']

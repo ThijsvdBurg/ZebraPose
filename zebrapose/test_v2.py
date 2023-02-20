@@ -37,7 +37,7 @@ from tools_for_BOP.common_dataset_info import get_obj_info
 
 from binary_code_helper.generate_new_dict import generate_new_corres_dict
 
-from tools_for_BOP import write_csv
+from tools_for_BOP import write_to_csv
 
 def visualise_tensor(tensor_gpu, ch=0, allkernels=False, nrows=8, ncols=8):
     """
@@ -54,7 +54,7 @@ def visualise_tensor(tensor_gpu, ch=0, allkernels=False, nrows=8, ncols=8):
     tensor_cpu = tensor_gpu.detach().cpu()
     # tensor=tensor_cpu.permute(1,0,2,3)
     tensor=tensor_cpu.numpy()
-    print('tensor t type and shape', type(tensor),tensor.shape)
+    # print('tensor t type and shape', type(tensor),tensor.shape)
     if allkernels: tensor = tensor.view((1,-1) + tensor.shape[-2:])
     elif ch >= 0: tensor = tensor[:,ch,:,:]
     elif ch < 0:
@@ -379,6 +379,7 @@ def main(configs):
         icp_refiner = ICPRefiner(mesh_path, test_img.shape[1], test_img.shape[0], num_iters=100)
 
     for batch_idx, (data, entire_masks, masks, Rs, ts, Bboxes, class_code_images, cam_Ks) in enumerate(tqdm(test_loader)):
+        print('data torch size',data.size())
         if torch.cuda.is_available():
             data=data.cuda()
             masks = masks.cuda()

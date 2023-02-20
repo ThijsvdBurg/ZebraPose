@@ -3,6 +3,8 @@
 bop_challange = False
 #bop_path = /home/pmvanderburg/noetic-husky/datasets/bop_datasets
 bop_path = /media/pmvanderburg/T7/bop_datasets
+training_data_folder = train_real
+training_data_folder_2 = train_pbr
 dataset_name = husky
 test_folder = test
 second_dataset_ratio = 0.875
